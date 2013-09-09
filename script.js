@@ -1,11 +1,9 @@
-// combine:
-// - bejewelled
-// - dots
-
 var stage;
 var context;
 var scoreEl = document.querySelector('#score');
 var drawEl = document.querySelector('#draws');
+var loopEl = document.querySelector('#loops') ;
+var swapEl = document.querySelector('#swaps');
 
 var Colour = {};
 Colour[Colour['0'] = 'White']  = 0;
@@ -16,12 +14,20 @@ Colour[Colour['4'] = 'Blue']   = 4;
 Colour[Colour['5'] = 'Yellow'] = 5;
 Colour[Colour['7'] = 'Grey']   = 7;
 
+var Mode = {};
+Mode[Mode['0'] = 'Dots']   = 0;
+Mode[Mode['1'] = 'Jewels'] = 1;
+
 var COLS = 6;
 var ROWS = 6;
 var WESTGAP = 30;
 var NORTHGAP = 30;
 
 var BACKGROUND = Colour.White;
+
+var SOUND = false;
+
+//var GAMEMODE = Mode.Dots;
 
 var XYONLY = true;
 
@@ -33,12 +39,21 @@ var mouse = {
 
 var score = 0;
 var draws = 0;
+var loops = 0;
+
+var osc = null;
+var freqs = [500, 1500, 2500, 3500, 4500];
 
 function initAudio () {
 
 	audioContext = null;
 	try {
 		audioContext = new webkitAudioContext();
+		osc = audioContext.createOscillator ();
+	    osc.type = this.osc.TRIANGLE;
+	    osc.connect ( audioContext.destination );
+	    osc.noteOn ( 0 );
+	    osc.frequency.value = 0;
 	}
 	catch ( e ) {}
 
@@ -49,17 +64,37 @@ var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAni
 
 window.requestAnimationFrame = requestAnimationFrame;                       
 
-function Achievement (name, description, need) {
+function Achievement (name, description, need, achieve) {
+	this.got = false;
 	this.name = name;
 	this.description = description;
-	this.need = need;
+	this.satisfied = need;
+	this.achieve = achieve;
 }
 
 var achievements = [
-	new Achievement('Test', 'Just a test!', function(){
-		
+	new Achievement('Loop', 'Get a loop!', function () {
+		return loops > 0;
+	}, function () {
+		console.log('Got a loop, yay!');
+	}) ,
+	new Achievement ('Score of 10', 'Get a score of 10', function () {
+		return score >= 10;
+	}, function () {
+		console.log('Got a score of 10, yay!');
 	})
 ];
+
+function checkAchievements () {
+	for (var i = 0, l = achievements.length; i < l; i++) {
+		if (!achievements[i].got) {
+			if(achievements[i].satisfied()){
+				achievements[i].achieve();
+				achievements[i].got = true;
+			}
+		}
+	}
+}
 
 function deg2rad (deg) {
 	return (deg * Math.PI) / 180;
@@ -115,7 +150,19 @@ function initStage () {
 	stage.setAttribute('width', 210);
 	stage.setAttribute('height', 210);
 	context = stage.getContext('2d');
-	var lastX, lastY;
+	var lastX, lastY, shift = false;
+	document.addEventListener('keydown', function (e) {
+		if (e.shiftKey) {
+			console.log('shift');
+			shift = true;
+		}
+	});
+	document.addEventListener('keyup', function (e) {
+		if (!e.shiftKey && shift) {
+			console.log('unshift');
+			shift = false;
+		}
+	});
 	stage.addEventListener('mousedown', function (e) {
 		var x = e.offsetX, y = e.offsetY;
 		mouse.x = x;
@@ -138,6 +185,7 @@ function initStage () {
 				//circles[x2][y2].colour = Colour.Yellow;
 				hitCircles.push(circles[x2][y2]);
 				tracingColour = circles[x2][y2].colour;
+				traceLength = 0;
 			}
 		}
 	});
@@ -161,13 +209,15 @@ function initStage () {
 			mouse.y = y;
 			x2 = snapToGrip(x, 30);
 			y2 = snapToGrip(y, 30);
-			if (x2 === null || y2 === null) {
-				// ?
-			} else {
+			if (x2 !== null && y2 !== null) {
 				x3 = x2 - WESTGAP;
 				y3 = y2 - NORTHGAP;
 				x3 /= 30;
 				y3 /= 30;
+				
+				//if () {
+					
+				//}
 				
 				// Has to be between circles of the same colour
 				if (circles[x3][y3].colour !== tracingColour) {
@@ -189,7 +239,10 @@ function initStage () {
 				
 					for (var i = 0, l = hitCircles.length; i < l; i++) {
 						if (hitCircles[i] === circles[x3][y3]) {
-							console.log('loop');
+							loopEl.innerHTML = (++loops);
+							
+							// End the trace by forcing a "mouse up"
+							mouse.down = false;
 							break;
 						}
 					}
@@ -199,6 +252,17 @@ function initStage () {
 					hitCircles.push(circles[x3][y3]);
 					lastX = x3;
 					lastY = y3;
+					
+					if (osc !== null && SOUND) {
+						osc.frequency.value = freqs[Math.min(traceLength, freqs.length - 1)];
+						setTimeout(function () {
+							osc.frequency.value = 0;
+						}, 100);
+						console.log('noise');
+					}
+					
+					traceLength ++;
+					
 				}
 			}
 		}
@@ -266,6 +330,9 @@ function clearPoints () {
 	// Score
 	givePoints(hitCircles.length);
 	
+	// Achievements
+	checkAchievements();
+	
 }
 
 function gravity () {
@@ -305,6 +372,7 @@ function step (timestamp) {
 	requestAnimationFrame(step);
 }
 
+initAudio();
 initStage();
 initCircles();
 requestAnimationFrame(step);
