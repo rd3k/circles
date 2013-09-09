@@ -43,6 +43,11 @@ var loops = 0;
 var swaps = 0;
 var gamemode = Mode.Dots;
 
+var northSwaps = 0;
+var southSwaps = 0;
+var westSwaps = 0;
+var eastSwaps = 0;
+
 var osc = null;
 var freqs = [500, 1500, 2500, 3500, 4500];
 
@@ -143,6 +148,11 @@ var achievements = [
 		return swaps > 0;
 	}, function () {
 		console.log('You performed a swap!');
+	}) ,
+	new Achievement('All swaps', 'Perform a swap up, down, left and right', function () {
+		return northSwaps > 0 && southSwaps > 0 && westSwaps > 0 && eastSwaps > 0;
+	}, function () {
+		console.log('You swapped in all 4 directions!');
 	})
 ];
 
@@ -290,16 +300,20 @@ function initStage () {
 					
 					var doSwap = false, swapColour, other;
 					if (lastY - y3 === 1) {
-						console.log('north');
+						// North
+						northSwaps++;
 						doSwap = true;
 					} else if (lastY - y3 === -1) {
-						console.log('south');
+						// South
+						southSwaps++;
 						doSwap = true;
 					} else if (lastX - x3 === 1) {
-						console.log('west');
+						// West
+						westSwaps++;
 						doSwap = true;
 					} else if (lastX - x3 === -1) {
-						console.log('east');
+						// East
+						eastSwaps++;
 						doSwap = true;
 					}
 					
