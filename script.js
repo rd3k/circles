@@ -1,3 +1,5 @@
+// Interesting bug: connect top left dot ONLY with the one to its right
+
 var stage;
 var context;
 var scoreEl = document.querySelector('#score');
