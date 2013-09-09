@@ -4,6 +4,7 @@
 
 var stage;
 var context;
+var scoreEl = document.querySelector('#score');
 
 var Colour = {};
 Colour[Colour['0'] = 'White']  = 0;
@@ -29,6 +30,8 @@ var mouse = {
 	down: false
 };
 
+var score = 0;
+
 function initAudio () {
 
 	audioContext = null;
@@ -43,6 +46,18 @@ var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAni
 							window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
 window.requestAnimationFrame = requestAnimationFrame;                       
+
+function Achievement (name, description, need) {
+	this.name = name;
+	this.description = description;
+	this.need = need;
+}
+
+var achievements = [
+	new Achievement('Test', 'Just a test!', function(){
+		
+	})
+];
 
 function deg2rad (deg) {
 	return (deg * Math.PI) / 180;
@@ -65,6 +80,7 @@ var circles = [];
 var points = [];
 var hitCircles = [];
 var tracingColour = null;
+var traceLength = 0;
 
 function snapToGrip(val, gridSize) {
     var snap_candidate = gridSize * Math.round(val / gridSize);
@@ -119,7 +135,6 @@ function initStage () {
 				points.push(new Point(x, y));
 				//circles[x2][y2].colour = Colour.Yellow;
 				hitCircles.push(circles[x2][y2]);
-				console.log(circles[x2][y2].colour);
 				tracingColour = circles[x2][y2].colour;
 			}
 		}
@@ -208,7 +223,7 @@ function drawPoints () {
 			context.lineTo(points[i].x, points[i].y);
 		}
 	}
-	context.strokeStyle = Colour[Colour.White];
+	context.strokeStyle = Colour[tracingColour];
     context.stroke();
 }
 
@@ -241,6 +256,14 @@ function clearPoints () {
 			}
 		}
 	}
+	
+	// Score
+	givePoints(hitCircles.length);
+	
+}
+
+function givePoints (p) {
+	scoreEl.innerHTML = (score += p);
 }
 
 function step (timestamp) {
