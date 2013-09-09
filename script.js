@@ -133,8 +133,50 @@ var achievements = [
 	}, function () {
 		console.log('You cleared a whole column!');
 	}),
+	new Achievement('Full height', 'Draw a line spanning the full height', function () {
+		if (hitCircles.length < 2) {
+			return false;
+		}
+		var need = 2;
+		for (var x = 0; x < COLS; x++) {
+			if (circles[x][0].colour === Colour.White) {
+				need--;
+				break;
+			}
+		}
+		for (var x = 0; x < COLS; x++) {
+			if (circles[x][ROWS - 1].colour === Colour.White) {
+				need--;
+				break;
+			}
+		}
+		return need == 0;
+	}, function () {
+		console.log('You drew a line spanning the full height!');
+	}),
+	new Achievement('Full width', 'Draw a line spanning the full width', function () {
+		if (hitCircles.length < 2) {
+			return false;
+		}
+		var need = 2;
+		for (var y = 0; y < ROWS; y++) {
+			if (circles[0][y].colour === Colour.White) {
+				need--;
+				break;
+			}
+		}
+		for (var y = 0; y < ROWS; y++) {
+			if (circles[COLS - 1][y].colour === Colour.White) {
+				need--;
+				break;
+			}
+		}
+		return need == 0;
+	}, function () {
+		console.log('You drew a line spanning the full width!');
+	}),
 	new Achievement('5 red', 'Get a line of exactly 5 red', function () {
-		if (hitCircles.length < 5) {
+		if (hitCircles.length != 5) {
 			return false;
 		}
 		for (var i = 0, l = hitCircles.length; i < l; i++) {
@@ -161,6 +203,7 @@ var achievements = [
 totalAchEl.innerHTML = achievements.length;
 
 function checkAchievements () {
+	// TODO: Need to split achievements into sections corresponding to when they need to be checked for
 	for (var i = 0, l = achievements.length; i < l; i++) {
 		if (!achievements[i].got) {
 			if(achievements[i].satisfied()){
@@ -228,7 +271,7 @@ function initStage () {
 	context = stage.getContext('2d');
 	var lastX, lastY, shift = false;
 	document.addEventListener('keydown', function (e) {
-		if (mouse.down) {
+		if (mouse.down || score < POINTSFORSWAP) {
 			return;
 		}
 		if (e.shiftKey) {
@@ -326,6 +369,7 @@ function initStage () {
 						other.colour = swapColour;
 						mouse.down = false;
 						swapEl.innerHTML = (++swaps);
+						givePoints(-POINTSFORSWAP);
 						checkAchievements();
 					}
 					
