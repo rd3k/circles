@@ -4,6 +4,8 @@ var scoreEl = document.querySelector('#score');
 var drawEl = document.querySelector('#draws');
 var loopEl = document.querySelector('#loops') ;
 var swapEl = document.querySelector('#swaps');
+var gotAchEl = document.querySelector('#gotachievements');
+var totalAchEl = document.querySelector('#totalachievements');
 
 var Colour = {};
 Colour[Colour['0'] = 'White']  = 0;
@@ -27,8 +29,6 @@ var BACKGROUND = Colour.White;
 
 var SOUND = false;
 
-//var GAMEMODE = Mode.Dots;
-
 var XYONLY = true;
 
 var mouse = {
@@ -40,6 +40,7 @@ var mouse = {
 var score = 0;
 var draws = 0;
 var loops = 0;
+var gamemode = Mode.Dots;
 
 var osc = null;
 var freqs = [500, 1500, 2500, 3500, 4500];
@@ -72,18 +73,60 @@ function Achievement (name, description, need, achieve) {
 	this.achieve = achieve;
 }
 
+var gotAch = 0;
+
 var achievements = [
 	new Achievement('Loop', 'Get a loop!', function () {
 		return loops > 0;
 	}, function () {
 		console.log('Got a loop, yay!');
-	}) ,
-	new Achievement ('Score of 10', 'Get a score of 10', function () {
+	}),
+	new Achievement('Score of 10', 'Get a score of 10', function () {
 		return score >= 10;
 	}, function () {
 		console.log('Got a score of 10, yay!');
-	})
+	}),
+	new Achievement('Remove 4', 'Remove a line of 4', function () {
+		return hitCircles.length > 3;
+	}, function () {
+		console.log('Got a line of 4, yay!');
+	}),
+	new Achievement('Clear row', 'Clear a full row', function () {
+		for (var y = 0; y < ROWS; y++) {
+			if (circles[0][y].colour === Colour.White) {
+				for (var x = 1; x < COLS - 1; x++) {
+					if (circles[x][y].colour !== Colour.White) {
+						break;
+					}
+				}
+				if (circles[COLS - 1][y].colour === Colour.White) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}, function () {
+		console.log('You cleared a whole row!');
+	}),
+	new Achievement('Clear column', 'Clear a full column', function () {
+		for (var x = 0; x < COLS; x++) {
+			if (circles[x][0].colour === Colour.White) {
+				for (var y = 1; y < ROWS - 1; y++) {
+					if (circles[x][y].colour !== Colour.White) {
+						break;
+					}
+				}
+				if (circles[ROWS - 1][x].colour === Colour.White) {
+					return true;
+				}
+			}
+		}
+	}, function () {
+		console.log('You cleared a whole column!');
+	}
 ];
+
+totalAchEl.innerHTML = achievements.length;
 
 function checkAchievements () {
 	for (var i = 0, l = achievements.length; i < l; i++) {
@@ -91,6 +134,7 @@ function checkAchievements () {
 			if(achievements[i].satisfied()){
 				achievements[i].achieve();
 				achievements[i].got = true;
+				gotAchEl.innerHTML = (++gotAch);
 			}
 		}
 	}
@@ -155,12 +199,14 @@ function initStage () {
 		if (e.shiftKey) {
 			console.log('shift');
 			shift = true;
+			gamemode = Mode.Jewels;
 		}
 	});
 	document.addEventListener('keyup', function (e) {
 		if (!e.shiftKey && shift) {
 			console.log('unshift');
 			shift = false;
+			gamemode = Mode.Dots;
 		}
 	});
 	stage.addEventListener('mousedown', function (e) {
@@ -191,7 +237,6 @@ function initStage () {
 	});
 	stage.addEventListener('mouseup', function () {
 		mouse.down = false;
-		// Find out whether any squares were created
 		if (points.length > 1) {
 			clearPoints();
 			drawEl.innerHTML = (++draws);
@@ -215,27 +260,23 @@ function initStage () {
 				x3 /= 30;
 				y3 /= 30;
 				
-				//if () {
-					
-				//}
+				if (x3 < 0 || x3 >= COLS || y3 < 0 || y3 >= ROWS) {
+					return;
+				}
 				
 				// Has to be between circles of the same colour
 				if (circles[x3][y3].colour !== tracingColour) {
 					return;
 				}
 				
-				if (x3 >= 0 && x3 < COLS && 
-					y3 >= 0 && y3 < ROWS &&
-					(
-						( !XYONLY && 
-							Math.abs(lastX - x3) === 1 && Math.abs(lastY - y3) === 1
-						) ||
-						( XYONLY && 
-							( Math.abs(lastX - x3) === 1 && lastY === y3 ) || 
-							( Math.abs(lastY - y3) === 1 && lastX === x3 )
-						)
+				if (( !XYONLY && 
+						Math.abs(lastX - x3) === 1 && Math.abs(lastY - y3) === 1
+					) ||
+					( XYONLY && 
+						( Math.abs(lastX - x3) === 1 && lastY === y3 ) || 
+						( Math.abs(lastY - y3) === 1 && lastX === x3 )
 					)
-				) {
+				){
 				
 					for (var i = 0, l = hitCircles.length; i < l; i++) {
 						if (hitCircles[i] === circles[x3][y3]) {
@@ -276,6 +317,7 @@ function drawStage () {
 
 function drawDots () {
 	context.lineWidth = 1;
+	context.globalAlpha = 0.4;
 	for (var x = 0; x < COLS; x++) {
 		for (var y = 0; y < ROWS; y++) {
 			context.fillStyle = Colour[circles[x][y].colour];
@@ -286,6 +328,7 @@ function drawDots () {
 			context.fill();
 		}
 	}
+	context.globalAlpha = 1.0;
 }
 
 function drawPoints () {
@@ -324,13 +367,16 @@ function clearPoints () {
 		hitCircles[i].colour = Colour.White;
 	}
 	
+	// Achievements
+	checkAchievements();
+	
 	// Apply gravity
 	gravity();
 	
 	// Score
 	givePoints(hitCircles.length);
 	
-	// Achievements
+	// Achievements...again?
 	checkAchievements();
 	
 }
