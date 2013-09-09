@@ -29,7 +29,7 @@ var BACKGROUND = Colour.White;
 
 var SOUND = false;
 
-var XYONLY = false;
+var XYONLY = true;
 
 var mouse = {
 	x: 0,
@@ -40,6 +40,7 @@ var mouse = {
 var score = 0;
 var draws = 0;
 var loops = 0;
+var swaps = 0;
 var gamemode = Mode.Dots;
 
 var osc = null;
@@ -137,6 +138,11 @@ var achievements = [
 		return true;
 	}, function () {
 		console.log('You got exactly 5 red!');
+	}),
+	new Achievement('Swap', 'Perform a swap', function () {
+		return swaps > 0;
+	}, function () {
+		console.log('You performed a swap!');
 	})
 ];
 
@@ -210,15 +216,16 @@ function initStage () {
 	context = stage.getContext('2d');
 	var lastX, lastY, shift = false;
 	document.addEventListener('keydown', function (e) {
+		if (mouse.down) {
+			return;
+		}
 		if (e.shiftKey) {
-			console.log('shift');
 			shift = true;
 			gamemode = Mode.Jewels;
 		}
 	});
 	document.addEventListener('keyup', function (e) {
 		if (!e.shiftKey && shift) {
-			console.log('unshift');
 			shift = false;
 			gamemode = Mode.Dots;
 		}
@@ -240,7 +247,7 @@ function initStage () {
 				lastX = x2;
 				lastY = y2;
 				if (gamemode === Mode.Jewels) {
-					console.log('JEWELS SWAP START LOL');
+					hitCircles.push(circles[x2][y2]);
 				} else {
 					points.push(new Point(x, y));
 					hitCircles.push(circles[x2][y2]);
@@ -279,47 +286,78 @@ function initStage () {
 					return;
 				}
 				
-				// Has to be between circles of the same colour
-				if (circles[x3][y3].colour !== tracingColour) {
-					return;
-				}
+				if (gamemode === Mode.Jewels) {
+					
+					var doSwap = false, swapColour, other;
+					if (lastY - y3 === 1) {
+						console.log('north');
+						doSwap = true;
+					} else if (lastY - y3 === -1) {
+						console.log('south');
+						doSwap = true;
+					} else if (lastX - x3 === 1) {
+						console.log('west');
+						doSwap = true;
+					} else if (lastX - x3 === -1) {
+						console.log('east');
+						doSwap = true;
+					}
+					
+					if (doSwap) {
+						swapColour = circles[x3][y3].colour;
+						other = hitCircles.pop();
+						circles[x3][y3].colour = other.colour;
+						other.colour = swapColour;
+						mouse.down = false;
+						swapEl.innerHTML = (++swaps);
+						checkAchievements();
+					}
+					
+					
+				} else if (gamemode === Mode.Dots) {
 				
-				if (( !XYONLY && 
-						Math.abs(lastX - x3) === 1 || Math.abs(lastY - y3) === 1
-					) ||
-					( XYONLY && 
-						( Math.abs(lastX - x3) === 1 && lastY === y3 ) || 
-						( Math.abs(lastY - y3) === 1 && lastX === x3 )
-					)
-				){
-				
-					for (var i = 0, l = hitCircles.length; i < l; i++) {
-						if (hitCircles[i] === circles[x3][y3]) {
-							loopEl.innerHTML = (++loops);
-							
-							// End the trace by forcing a "mouse up"
-							mouse.down = false;
-							break;
+					// Has to be between circles of the same colour
+					if (circles[x3][y3].colour !== tracingColour) {
+						return;
+					}
+					
+					if (( !XYONLY && 
+							Math.abs(lastX - x3) === 1 || Math.abs(lastY - y3) === 1
+						) ||
+						( XYONLY && 
+							( Math.abs(lastX - x3) === 1 && lastY === y3 ) || 
+							( Math.abs(lastY - y3) === 1 && lastX === x3 )
+						)
+					){
+					
+						for (var i = 0, l = hitCircles.length; i < l; i++) {
+							if (hitCircles[i] === circles[x3][y3]) {
+								loopEl.innerHTML = (++loops);
+								
+								// End the trace by forcing a "mouse up"
+								mouse.down = false;
+								break;
+							}
 						}
+					
+						points.push(new Point(x2, y2));
+						hitCircles.push(circles[x3][y3]);
+						lastX = x3;
+						lastY = y3;
+						
+						if (osc !== null && SOUND) {
+							osc.frequency.value = freqs[Math.min(traceLength, freqs.length - 1)];
+							setTimeout(function () {
+								osc.frequency.value = 0;
+							}, 100);
+							console.log('noise');
+						}
+						
+						traceLength ++;
+						
 					}
-				
-					//circles[x3][y3].colour = Colour.Yellow;
-					points.push(new Point(x2, y2));
-					hitCircles.push(circles[x3][y3]);
-					lastX = x3;
-					lastY = y3;
-					
-					if (osc !== null && SOUND) {
-						osc.frequency.value = freqs[Math.min(traceLength, freqs.length - 1)];
-						setTimeout(function () {
-							osc.frequency.value = 0;
-						}, 100);
-						console.log('noise');
-					}
-					
-					traceLength ++;
-					
 				}
+					
 			}
 		}
 	});
@@ -333,14 +371,32 @@ function drawStage () {
 function drawDots () {
 	context.lineWidth = 1;
 	context.globalAlpha = 0.4;
-	for (var x = 0; x < COLS; x++) {
-		for (var y = 0; y < ROWS; y++) {
-			context.fillStyle = Colour[circles[x][y].colour];
-			context.strokeStyle = context.fillStyle;
-			context.beginPath();
-			context.arc(30 + (x * 30), 30 + (y * 30), 5, 0, 2 * Math.PI, false);
-			context.stroke();
-			context.fill();
+	if (gamemode === Mode.Dots) {
+		for (var x = 0; x < COLS; x++) {
+			for (var y = 0; y < ROWS; y++) {
+				context.fillStyle = Colour[circles[x][y].colour];
+				context.strokeStyle = context.fillStyle;
+				context.beginPath();
+				context.arc(30 + (x * 30), 30 + (y * 30), 5, 0, 2 * Math.PI, false);
+				context.stroke();
+				context.fill();
+			}
+		}
+	} else if (gamemode === Mode.Jewels) {
+		context.globalAlpha = 1.0;
+		var size = 5;
+		for (var x = 0; x < COLS; x++) {
+			for (var y = 0; y < ROWS; y++) {
+				context.fillStyle = Colour[circles[x][y].colour];
+				context.strokeStyle = context.fillStyle;
+				context.beginPath();
+			    context.lineTo((30 + (x * 30)) - size, 30 + (y * 30));
+			    context.lineTo((30 + (x * 30)), 30 + (y * 30) + size);
+			    context.lineTo((30 + (x * 30)) + size, 30 + (y * 30));
+			    context.lineTo((30 + (x * 30)), 30 + (y * 30) - size);
+				context.stroke();
+				context.fill();
+			}
 		}
 	}
 	context.globalAlpha = 1.0;
