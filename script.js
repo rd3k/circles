@@ -20,6 +20,12 @@ var Mode = {};
 Mode[Mode['0'] = 'Dots']   = 0;
 Mode[Mode['1'] = 'Jewels'] = 1;
 
+var MoveStage = {};
+MoveStage[MoveStage['1'] = 'AfterTrace']    = 1;
+MoveStage[MoveStage['2'] = 'AfterHitWhite'] = 2;
+MoveStage[MoveStage['4'] = 'AfterPoints']   = 4;
+MoveStage[MoveStage['8'] = 'AfterSwap']     = 8;
+
 var COLS = 6;
 var ROWS = 6;
 var WESTGAP = 30;
@@ -73,9 +79,10 @@ var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAni
 
 window.requestAnimationFrame = requestAnimationFrame;                       
 
-function Achievement (name, description, need, achieve) {
+function Achievement (name, description, when, need, achieve) {
 	this.got = false;
 	this.name = name;
+	this.checkWhen = when;
 	this.description = description;
 	this.satisfied = need;
 	this.achieve = achieve;
@@ -84,22 +91,22 @@ function Achievement (name, description, need, achieve) {
 var gotAch = 0;
 
 var achievements = [
-	new Achievement('Loop', 'Get a loop!', function () {
+	new Achievement('Loop', 'Get a loop!', MoveStage.AfterTrace, function () {
 		return loops > 0;
 	}, function () {
 		console.log('Got a loop, yay!');
 	}),
-	new Achievement('Score of 10', 'Get a score of 10', function () {
+	new Achievement('Score of 10', 'Get a score of 10', MoveStage.AfterTrace, function () {
 		return score >= 10;
 	}, function () {
 		console.log('Got a score of 10, yay!');
 	}),
-	new Achievement('Remove 4', 'Remove a line of 4', function () {
+	new Achievement('Remove 4', 'Remove a line of 4', MoveStage.AfterTrace, function () {
 		return hitCircles.length > 3;
 	}, function () {
 		console.log('Got a line of 4, yay!');
 	}),
-	new Achievement('Clear row', 'Clear a full row', function () {
+	new Achievement('Clear row', 'Clear a full row', MoveStage.AfterHitWhite, function () {
 		for (var y = 0; y < ROWS; y++) {
 			if (circles[0][y].colour === Colour.White) {
 				for (var x = 1; x < COLS - 1; x++) {
@@ -116,7 +123,7 @@ var achievements = [
 	}, function () {
 		console.log('You cleared a whole row!');
 	}),
-	new Achievement('Clear column', 'Clear a full column', function () {
+	new Achievement('Clear column', 'Clear a full column', MoveStage.AfterHitWhite, function () {
 		for (var x = 0; x < COLS; x++) {
 			if (circles[x][0].colour === Colour.White) {
 				for (var y = 1; y < ROWS - 1; y++) {
@@ -133,7 +140,7 @@ var achievements = [
 	}, function () {
 		console.log('You cleared a whole column!');
 	}),
-	new Achievement('Full height', 'Draw a line spanning the full height', function () {
+	new Achievement('Full height', 'Draw a line spanning the full height', MoveStage.AfterHitWhite, function () {
 		if (hitCircles.length < 2) {
 			return false;
 		}
@@ -154,7 +161,7 @@ var achievements = [
 	}, function () {
 		console.log('You drew a line spanning the full height!');
 	}),
-	new Achievement('Full width', 'Draw a line spanning the full width', function () {
+	new Achievement('Full width', 'Draw a line spanning the full width', MoveStage.AfterHitWhite, function () {
 		if (hitCircles.length < 2) {
 			return false;
 		}
@@ -175,7 +182,15 @@ var achievements = [
 	}, function () {
 		console.log('You drew a line spanning the full width!');
 	}),
-	new Achievement('5 red', 'Get a line of exactly 5 red', function () {
+	new Achievement('Full loop', 'Draw a loop around the perimeter', MoveStage.AfterHitWhite, function () {
+		return (circles[0][0].colour === Colour.White) &&
+				(circles[0][ROWS = 1].colour === Colour.White) &&
+				(circles[COLS - 1][ROWS = 1].colour === Colour.White) &&
+				(circles[COLS - 1][0].colour === Colour.White)
+	}, function () {
+		console.log('You drew a loop around the perimeter!');
+	}),
+	new Achievement('5 red', 'Get a line of exactly 5 red', MoveStage.AfterTrace, function () {
 		if (hitCircles.length != 5) {
 			return false;
 		}
@@ -188,12 +203,12 @@ var achievements = [
 	}, function () {
 		console.log('You got exactly 5 red!');
 	}),
-	new Achievement('Swap', 'Perform a swap', function () {
+	new Achievement('Swap', 'Perform a swap', MoveStage.AfterSwap, function () {
 		return swaps > 0;
 	}, function () {
 		console.log('You performed a swap!');
 	}) ,
-	new Achievement('All swaps', 'Perform a swap up, down, left and right', function () {
+	new Achievement('All swaps', 'Perform a swap up, down, left and right', MoveStage.AfterSwap, function () {
 		return northSwaps > 0 && southSwaps > 0 && westSwaps > 0 && eastSwaps > 0;
 	}, function () {
 		console.log('You swapped in all 4 directions!');
@@ -202,7 +217,7 @@ var achievements = [
 
 totalAchEl.innerHTML = achievements.length;
 
-function checkAchievements () {
+function checkAchievements (when) {
 	// TODO: Need to split achievements into sections corresponding to when they need to be checked for
 	for (var i = 0, l = achievements.length; i < l; i++) {
 		if (!achievements[i].got) {
