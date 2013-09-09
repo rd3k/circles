@@ -25,7 +25,8 @@ var XYONLY = true;
 
 var mouse = {
 	x: 0,
-	y: 0
+	y: 0,
+	down: false
 };
 
 function initAudio () {
@@ -63,6 +64,7 @@ function Circle () {
 var circles = [];
 var points = [];
 var hitCircles = [];
+var tracingColour = null;
 
 function snapToGrip(val, gridSize) {
     var snap_candidate = gridSize * Math.round(val / gridSize);
@@ -84,7 +86,7 @@ function initCircles () {
 	for (var x = 0; x < COLS; x++) {
 		for (var y = 0; y < ROWS; y++) {
 			circles[x][y] = new Circle();
-			circles[x][y].colour = [2,3,4][~~(Math.random() * 3)]
+			circles[x][y].colour = [Colour.Red, Colour.Green, Colour.Blue][~~(Math.random() * 3)]
 		}
 	}
 
@@ -95,14 +97,13 @@ function initStage () {
 	stage.setAttribute('width', 210);
 	stage.setAttribute('height', 210);
 	context = stage.getContext('2d');
-	var mouseDown = false;
 	var lastX, lastY;
 	stage.addEventListener('mousedown', function (e) {
 		var x = e.offsetX, y = e.offsetY;
 		mouse.x = x;
 		mouse.y = y;
 		var x2, y2;
-		mouseDown = true;
+		mouse.down = true;
 		x = snapToGrip(x, 30);
 		y = snapToGrip(y, 30);
 		if (x === null || y === null) {
@@ -118,11 +119,13 @@ function initStage () {
 				points.push(new Point(x, y));
 				//circles[x2][y2].colour = Colour.Yellow;
 				hitCircles.push(circles[x2][y2]);
+				console.log(circles[x2][y2].colour);
+				tracingColour = circles[x2][y2].colour;
 			}
 		}
 	});
 	stage.addEventListener('mouseup', function () {
-		mouseDown = false;
+		mouse.down = false;
 		// Find out whether any squares were created
 		if (points.length > 1) {
 			clearPoints();
@@ -131,7 +134,7 @@ function initStage () {
 		hitCircles = [];
 	});
 	stage.addEventListener('mousemove', function (e) {
-		if (mouseDown) {
+		if (mouse.down) {
 			var x = e.offsetX,
 				y = e.offsetY,
 				x2, y2,
@@ -147,7 +150,24 @@ function initStage () {
 				y3 = y2 - NORTHGAP;
 				x3 /= 30;
 				y3 /= 30;
-				if (x3 >= 0 && x3 < COLS && y3 >= 0 && y3 < ROWS && (lastX != x3 || lastY != y3)) {
+				
+				// Has to be between circles of the same colour
+				if (circles[x3][y3].colour !== tracingColour) {
+					return;
+				}
+				
+				if (x3 >= 0 && x3 < COLS && 
+					y3 >= 0 && y3 < ROWS &&
+					(
+						( !XYONLY && 
+							Math.abs(lastX - x3) === 1 && Math.abs(lastY - y3) === 1
+						) ||
+						( XYONLY && 
+							( Math.abs(lastX - x3) === 1 && lastY === y3 ) || 
+							( Math.abs(lastY - y3) === 1 && lastX === x3 )
+						)
+					)
+				) {
 					//circles[x3][y3].colour = Colour.Yellow;
 					points.push(new Point(x2, y2));
 					hitCircles.push(circles[x3][y3]);
@@ -217,7 +237,7 @@ function clearPoints () {
 				for (var y2 = y; y2 > 0; y2--) {
 					circles[x][y2].colour = circles[x][y2 - 1].colour;
 				}
-				circles[x][0].colour = [2,3,4][~~(Math.random() * 3)];
+				circles[x][0].colour = [Colour.Red, Colour.Green, Colour.Blue][~~(Math.random() * 3)];
 			}
 		}
 	}
