@@ -31,6 +31,8 @@ var SOUND = false;
 
 var XYONLY = true;
 
+var POINTSFORSWAP = 20;
+
 var mouse = {
 	x: 0,
 	y: 0,
@@ -336,7 +338,7 @@ function initStage () {
 					}
 					
 					if (( !XYONLY && 
-							Math.abs(lastX - x3) === 1 || Math.abs(lastY - y3) === 1
+							( Math.abs(lastX - x3) === 1 || Math.abs(lastY - y3) === 1 )
 						) ||
 						( XYONLY && 
 							( Math.abs(lastX - x3) === 1 && lastY === y3 ) || 
