@@ -116,7 +116,7 @@ var achievements = [
 						break;
 					}
 				}
-				if (circles[ROWS - 1][x].colour === Colour.White) {
+				if (circles[x][ROWS - 1].colour === Colour.White) {
 					return true;
 				}
 			}
