@@ -5,6 +5,7 @@
 var stage;
 var context;
 var scoreEl = document.querySelector('#score');
+var drawEl = document.querySelector('#draws');
 
 var Colour = {};
 Colour[Colour['0'] = 'White']  = 0;
@@ -20,7 +21,7 @@ var ROWS = 6;
 var WESTGAP = 30;
 var NORTHGAP = 30;
 
-var BACKGROUND = Colour.Black;
+var BACKGROUND = Colour.White;
 
 var XYONLY = true;
 
@@ -31,6 +32,7 @@ var mouse = {
 };
 
 var score = 0;
+var draws = 0;
 
 function initAudio () {
 
@@ -144,6 +146,7 @@ function initStage () {
 		// Find out whether any squares were created
 		if (points.length > 1) {
 			clearPoints();
+			drawEl.innerHTML = (++draws);
 		}
 		points = [];
 		hitCircles = [];
@@ -183,6 +186,14 @@ function initStage () {
 						)
 					)
 				) {
+				
+					for (var i = 0, l = hitCircles.length; i < l; i++) {
+						if (hitCircles[i] === circles[x3][y3]) {
+							console.log('loop');
+							break;
+						}
+					}
+				
 					//circles[x3][y3].colour = Colour.Yellow;
 					points.push(new Point(x2, y2));
 					hitCircles.push(circles[x3][y3]);
@@ -215,6 +226,10 @@ function drawDots () {
 
 function drawPoints () {
 	context.lineWidth = 3;
+	context.shadowColor = '#aaa';
+	context.shadowBlur = 10;
+	context.shadowOffsetX = 0;
+	context.shadowOffsetY = 0;
 	context.beginPath();
 	for (var i = 0, l = points.length; i < l; i++) {
 		if (i === 0) {
@@ -246,6 +261,14 @@ function clearPoints () {
 	}
 	
 	// Apply gravity
+	gravity();
+	
+	// Score
+	givePoints(hitCircles.length);
+	
+}
+
+function gravity () {
 	for (var x = 0; x < COLS; x++) {
 		for (var y = 0; y < ROWS; y++) {
 			if (circles[x][y].colour === Colour.White) {
@@ -256,10 +279,17 @@ function clearPoints () {
 			}
 		}
 	}
-	
-	// Score
-	givePoints(hitCircles.length);
-	
+}
+
+function clearAllColour (c) {
+	for (var x = 0; x < COLS; x++) {
+		for (var y = 0; y < ROWS; y++) {
+			if (circles[x][y].colour === c) {
+				circles[x][y].colour = Colour.White;
+			}
+		}
+	}
+	gravity();
 }
 
 function givePoints (p) {
