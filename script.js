@@ -123,7 +123,7 @@ var achievements = [
 		}
 	}, function () {
 		console.log('You cleared a whole column!');
-	}
+	})
 ];
 
 totalAchEl.innerHTML = achievements.length;
