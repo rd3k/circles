@@ -19,7 +19,14 @@ var ROWS = 6;
 var WESTGAP = 30;
 var NORTHGAP = 30;
 
+var BACKGROUND = Colour.Black;
+
 var XYONLY = true;
+
+var mouse = {
+	x: 0,
+	y: 0
+};
 
 function initAudio () {
 
@@ -50,7 +57,6 @@ function Point (x, y) {
 }
 
 function Circle () {
-	this.position = new Point(0, 0);
 	this.colour = Colour.Grey;
 }
 
@@ -78,7 +84,7 @@ function initCircles () {
 	for (var x = 0; x < COLS; x++) {
 		for (var y = 0; y < ROWS; y++) {
 			circles[x][y] = new Circle();
-			//circles[x][y].position = new Point(x, y); 
+			circles[x][y].colour = [2,3,4][~~(Math.random() * 3)]
 		}
 	}
 
@@ -87,12 +93,14 @@ function initCircles () {
 function initStage () {
 	stage = document.querySelector('#game');
 	stage.setAttribute('width', 210);
-	stage.setAttribute('height', 210 );
+	stage.setAttribute('height', 210);
 	context = stage.getContext('2d');
 	var mouseDown = false;
 	var lastX, lastY;
 	stage.addEventListener('mousedown', function (e) {
 		var x = e.offsetX, y = e.offsetY;
+		mouse.x = x;
+		mouse.y = y;
 		var x2, y2;
 		mouseDown = true;
 		x = snapToGrip(x, 30);
@@ -108,14 +116,17 @@ function initStage () {
 				lastX = x2;
 				lastY = y2;
 				points.push(new Point(x, y));
-				circles[x2][y2].colour = Colour.Yellow;
+				//circles[x2][y2].colour = Colour.Yellow;
 				hitCircles.push(circles[x2][y2]);
 			}
 		}
 	});
 	stage.addEventListener('mouseup', function () {
 		mouseDown = false;
-		clearPoints();
+		// Find out whether any squares were created
+		if (points.length > 1) {
+			clearPoints();
+		}
 		points = [];
 		hitCircles = [];
 	});
@@ -125,6 +136,8 @@ function initStage () {
 				y = e.offsetY,
 				x2, y2,
 				x3, y3;
+			mouse.x = x;
+			mouse.y = y;
 			x2 = snapToGrip(x, 30);
 			y2 = snapToGrip(y, 30);
 			if (x2 === null || y2 === null) {
@@ -135,7 +148,7 @@ function initStage () {
 				x3 /= 30;
 				y3 /= 30;
 				if (x3 >= 0 && x3 < COLS && y3 >= 0 && y3 < ROWS && (lastX != x3 || lastY != y3)) {
-					circles[x3][y3].colour = Colour.Yellow;
+					//circles[x3][y3].colour = Colour.Yellow;
 					points.push(new Point(x2, y2));
 					hitCircles.push(circles[x3][y3]);
 					lastX = x3;
@@ -147,7 +160,7 @@ function initStage () {
 }
 
 function drawStage () {
-	context.fillStyle = Colour[Colour.White];
+	context.fillStyle = Colour[BACKGROUND];
 	context.fillRect(0, 0, stage.width, stage.height);
 }
 
@@ -156,6 +169,7 @@ function drawDots () {
 	for (var x = 0; x < COLS; x++) {
 		for (var y = 0; y < ROWS; y++) {
 			context.fillStyle = Colour[circles[x][y].colour];
+			context.strokeStyle = context.fillStyle;
 			context.beginPath();
 			context.arc(30 + (x * 30), 30 + (y * 30), 5, 0, 2 * Math.PI, false);
 			context.stroke();
@@ -174,22 +188,47 @@ function drawPoints () {
 			context.lineTo(points[i].x, points[i].y);
 		}
 	}
-	context.strokeStyle = Colour[Colour.Black];
+	context.strokeStyle = Colour[Colour.White];
     context.stroke();
 }
 
+function drawTracer () {
+	if (points.length > 0) {
+		context.lineWidth = 3;
+		context.beginPath();
+		context.moveTo(points[points.length-1].x, points[points.length-1].y);
+		context.lineTo(mouse.x, mouse.y);
+		context.strokeStyle = Colour[Colour.Grey];
+		context.stroke();
+	}
+}
+
 function clearPoints () {
-	console.log("Clearing %o points", hitCircles.length);
+
+	// Make circles to clear white
 	for (var i = 0, l = hitCircles.length; i < l; i++) {
 		hitCircles[i].colour = Colour.White;
+	}
+	
+	// Apply gravity
+	for (var x = 0; x < COLS; x++) {
+		for (var y = 0; y < ROWS; y++) {
+			if (circles[x][y].colour === Colour.White) {
+				for (var y2 = y; y2 > 0; y2--) {
+					circles[x][y2].colour = circles[x][y2 - 1].colour;
+				}
+				circles[x][0].colour = [2,3,4][~~(Math.random() * 3)];
+			}
+		}
 	}
 }
 
 function step (timestamp) {
 	clear();
 	drawStage();
-	drawDots();
 	drawPoints();
+	drawTracer();
+	drawDots();
 	requestAnimationFrame(step);
 }
 
