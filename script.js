@@ -29,7 +29,7 @@ var BACKGROUND = Colour.White;
 
 var SOUND = false;
 
-var XYONLY = true;
+var XYONLY = false;
 
 var mouse = {
 	x: 0,
@@ -50,13 +50,13 @@ function initAudio () {
 	audioContext = null;
 	try {
 		audioContext = new webkitAudioContext();
-		osc = audioContext.createOscillator ();
+		osc = audioContext.createOscillator();
 	    osc.type = this.osc.TRIANGLE;
-	    osc.connect ( audioContext.destination );
-	    osc.noteOn ( 0 );
+	    osc.connect(audioContext.destination);
+	    osc.noteOn(0);
 	    osc.frequency.value = 0;
 	}
-	catch ( e ) {}
+	catch (e) {}
 
 }
 
@@ -121,8 +121,22 @@ var achievements = [
 				}
 			}
 		}
+		return false;
 	}, function () {
 		console.log('You cleared a whole column!');
+	}),
+	new Achievement('5 red', 'Get a line of exactly 5 red', function () {
+		if (hitCircles.length < 5) {
+			return false;
+		}
+		for (var i = 0, l = hitCircles.length; i < l; i++) {
+			if (hitCircles[i].colour !== Colour.Red) {
+				return false;
+			}
+		}
+		return true;
+	}, function () {
+		console.log('You got exactly 5 red!');
 	})
 ];
 
@@ -217,9 +231,7 @@ function initStage () {
 		mouse.down = true;
 		x = snapToGrip(x, 30);
 		y = snapToGrip(y, 30);
-		if (x === null || y === null) {
-			// ?
-		} else {
+		if (x !== null && y !== null) {
 			x2 = x - WESTGAP;
 			y2 = y - NORTHGAP;
 			x2 /= 30;
@@ -227,11 +239,14 @@ function initStage () {
 			if (x2 >= 0 && x2 < COLS && y2 >= 0 && y2 < ROWS) {
 				lastX = x2;
 				lastY = y2;
-				points.push(new Point(x, y));
-				//circles[x2][y2].colour = Colour.Yellow;
-				hitCircles.push(circles[x2][y2]);
-				tracingColour = circles[x2][y2].colour;
-				traceLength = 0;
+				if (gamemode === Mode.Jewels) {
+					console.log('JEWELS SWAP START LOL');
+				} else {
+					points.push(new Point(x, y));
+					hitCircles.push(circles[x2][y2]);
+					tracingColour = circles[x2][y2].colour;
+					traceLength = 0;
+				}
 			}
 		}
 	});
@@ -270,7 +285,7 @@ function initStage () {
 				}
 				
 				if (( !XYONLY && 
-						Math.abs(lastX - x3) === 1 && Math.abs(lastY - y3) === 1
+						Math.abs(lastX - x3) === 1 || Math.abs(lastY - y3) === 1
 					) ||
 					( XYONLY && 
 						( Math.abs(lastX - x3) === 1 && lastY === y3 ) || 
@@ -361,6 +376,9 @@ function drawTracer () {
 }
 
 function clearPoints () {
+
+	// Achievements, um
+	checkAchievements();
 
 	// Make circles to clear white
 	for (var i = 0, l = hitCircles.length; i < l; i++) {
