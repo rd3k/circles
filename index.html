@@ -12,7 +12,16 @@
     <br/>Loops: <span id="loops">0</span>
     <br/>Swaps: <span id="swaps">0</span>
     <br/>Achievements: <span id="gotachievements">0</span> / <span id="totalachievements">0</span>
+    <script src="watch.js"></script>
     <script src="script.js"></script>
+    <script>		
+		watch(game.achievements, 'gotCount', function (property, method, newVal, oldVal) {
+		    game.achievements.gotEl.innerHTML = newVal;
+		});
+		watch(game.stats, 'swaps', function (property, method, newVal, oldVal) {
+		    swapEl.innerHTML = newVal;
+		});
+    </script>
   </body>
 
 </html>

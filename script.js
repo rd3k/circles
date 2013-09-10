@@ -1,4 +1,4 @@
-// Interesting bug: connect top left dot ONLY with the one to its right
+var game = {};
 
 var stage;
 var context;
@@ -6,7 +6,6 @@ var scoreEl = document.querySelector('#score');
 var drawEl = document.querySelector('#draws');
 var loopEl = document.querySelector('#loops') ;
 var swapEl = document.querySelector('#swaps');
-var gotAchEl = document.querySelector('#gotachievements');
 var totalAchEl = document.querySelector('#totalachievements');
 
 var Colour = {};
@@ -58,179 +57,285 @@ var southSwaps = 0;
 var westSwaps = 0;
 var eastSwaps = 0;
 
-var osc = null;
-var freqs = [500, 1500, 2500, 3500, 4500];
-
-function initAudio () {
-
-	audioContext = null;
-	try {
-		audioContext = new webkitAudioContext();
-		osc = audioContext.createOscillator();
-	    osc.type = this.osc.TRIANGLE;
-	    osc.connect(audioContext.destination);
-	    osc.noteOn(0);
-	    osc.frequency.value = 0;
-	}
-	catch (e) {}
-
-}
-
 var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
 							window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
 window.requestAnimationFrame = requestAnimationFrame;                       
 
-function Achievement (name, description, when, need, achieve) {
-	this.got = false;
-	this.name = name;
-	this.checkWhen = when;
-	this.description = description;
-	this.satisfied = need;
-	this.achieve = achieve;
-}
+game.config = {
+	COLS: 6,
+	ROWS: 6,
+	WESTGAP: 30,
+	NORTHGAP: 30
+};
 
-var gotAch = 0;
+game.stats = {
+	score: 0,
+	draws: 0,
+	loops: 0,
+	swaps: 0,
+	northSwaps: 0,
+	southSwaps: 0,
+	westSwaps: 0,
+	eastSwaps: 0
+};
 
-var achievements = [
-	new Achievement('Loop', 'Get a loop!', MoveStage.AfterTrace, function () {
-		return loops > 0;
-	}, function () {
-		console.log('Got a loop, yay!');
-	}),
-	new Achievement('Score of 10', 'Get a score of 10', MoveStage.AfterTrace, function () {
-		return score >= 10;
-	}, function () {
-		console.log('Got a score of 10, yay!');
-	}),
-	new Achievement('Remove 4', 'Remove a line of 4', MoveStage.AfterTrace, function () {
-		return hitCircles.length > 3;
-	}, function () {
-		console.log('Got a line of 4, yay!');
-	}),
-	new Achievement('Clear row', 'Clear a full row', MoveStage.AfterHitWhite, function () {
-		for (var y = 0; y < ROWS; y++) {
-			if (circles[0][y].colour === Colour.White) {
-				for (var x = 1; x < COLS - 1; x++) {
-					if (circles[x][y].colour !== Colour.White) {
-						break;
+game.audio = {
+	context: null,
+	osc: null,
+	muted: false,
+	init: function () {
+		try {
+			this.context = new webkitAudioContext();
+			this.osc = this.context.createOscillator();
+		    this.osc.type = this.osc.TRIANGLE;
+		    this.osc.connect(this.context.destination);
+		    this.osc.noteOn(0);
+		    this.osc.frequency.value = 0;
+		}
+		catch (e) {}
+	},
+	play: function (sound) {
+		if (this.osc === null || this.muted) {
+			return;
+		}
+		switch (sound) {
+			case 'gotOne': {
+				this.osc.frequency.value = 500;
+				break;		
+			}
+			case 'gotTwo': {
+				this.osc.frequency.value = 1500;
+				break;
+			}
+			case 'gotThree': {
+				this.osc.frequency.value = 2500;
+				break;
+			}
+			case 'gotFour': {
+				this.osc.frequency.value = 3500;
+				break;
+			}
+			case 'gotFive': {
+				this.osc.frequency.value = 4500;
+				break;
+			}
+		}
+		setTimeout(function () {
+			game.audio.osc.frequency.value = 0;
+		}, 100);
+	}
+};
+
+game.audio.init();
+
+game.achievements = {
+	gotCount: 0,
+	count: 0,
+	gotEl: document.querySelector('#gotachievements'),
+	toCheck: {
+		AfterTrace: [],
+		AfterHitWhite: [],
+		AfterPoints: [],
+		AfterSwap: []
+	},
+	register: function (achievement, checkWhen) {
+		this.toCheck[MoveStage[checkWhen]].push(achievement);
+		this.count++;
+		return this;
+	},
+	getAll: function () {
+		return this.toCheck.AfterTrace.concat(this.toCheck.AfterHitWhite, this.toCheck.AfterPoints, this.toCheck.AfterSwap);
+	},
+	check: function (when) {
+		this.toCheck[MoveStage[when]].forEach(function(achievement){
+			if (!achievement.got) {
+				if (achievement.satisfied()) {
+					achievement.achieve();
+					achievement.got = true;
+					game.achievements.gotCount++;
+				}
+			}
+		});
+	},
+	Achievement: function(name, description, need, achieve) {
+		this.got = false;
+		this.name = name;
+		this.description = description;
+		this.satisfied = need;
+		this.achieve = achieve;
+	}
+};
+
+game.achievements
+	.register(
+		new game.achievements.Achievement('Loop', 'Get a loop!', function () {
+			return loops > 0;
+		}, function () {
+			console.log('Got a loop, yay!');
+		}),
+		MoveStage.AfterTrace
+	)
+	.register(
+		new game.achievements.Achievement('Score of 10', 'Get a score of 10', function () {
+			return score >= 10;
+		}, function () {
+			console.log('Got a score of 10, yay!');
+		}),
+		MoveStage.AfterTrace
+	)
+	.register(
+		new game.achievements.Achievement('Remove 4', 'Remove a line of 4', function () {
+			return hitCircles.length > 3;
+		}, function () {
+			console.log('Got a line of 4, yay!');
+		}),
+		MoveStage.AfterTrace
+	)
+	.register(
+		new game.achievements.Achievement('Clear row', 'Clear a full row', function () {
+			for (var y = 0; y < ROWS; y++) {
+				if (circles[0][y].colour === Colour.White) {
+					for (var x = 1; x < COLS - 1; x++) {
+						if (circles[x][y].colour !== Colour.White) {
+							break;
+						}
+					}
+					if (circles[COLS - 1][y].colour === Colour.White) {
+						return true;
 					}
 				}
-				if (circles[COLS - 1][y].colour === Colour.White) {
-					return true;
-				}
 			}
-		}
-		return false;
-	}, function () {
-		console.log('You cleared a whole row!');
-	}),
-	new Achievement('Clear column', 'Clear a full column', MoveStage.AfterHitWhite, function () {
-		for (var x = 0; x < COLS; x++) {
-			if (circles[x][0].colour === Colour.White) {
-				for (var y = 1; y < ROWS - 1; y++) {
-					if (circles[x][y].colour !== Colour.White) {
-						break;
+			return false;
+		}, function () {
+			console.log('You cleared a whole row!');
+		}),
+		MoveStage.AfterHitWhite
+	)
+	.register(
+		new game.achievements.Achievement('Clear column', 'Clear a full column', function () {
+			for (var x = 0; x < COLS; x++) {
+				if (circles[x][0].colour === Colour.White) {
+					for (var y = 1; y < ROWS - 1; y++) {
+						if (circles[x][y].colour !== Colour.White) {
+							break;
+						}
+					}
+					if (circles[x][ROWS - 1].colour === Colour.White) {
+						return true;
 					}
 				}
-				if (circles[x][ROWS - 1].colour === Colour.White) {
-					return true;
-				}
 			}
-		}
-		return false;
-	}, function () {
-		console.log('You cleared a whole column!');
-	}),
-	new Achievement('Full height', 'Draw a line spanning the full height', MoveStage.AfterHitWhite, function () {
-		if (hitCircles.length < 2) {
 			return false;
-		}
-		var need = 2;
-		for (var x = 0; x < COLS; x++) {
-			if (circles[x][0].colour === Colour.White) {
-				need--;
-				break;
-			}
-		}
-		for (var x = 0; x < COLS; x++) {
-			if (circles[x][ROWS - 1].colour === Colour.White) {
-				need--;
-				break;
-			}
-		}
-		return need == 0;
-	}, function () {
-		console.log('You drew a line spanning the full height!');
-	}),
-	new Achievement('Full width', 'Draw a line spanning the full width', MoveStage.AfterHitWhite, function () {
-		if (hitCircles.length < 2) {
-			return false;
-		}
-		var need = 2;
-		for (var y = 0; y < ROWS; y++) {
-			if (circles[0][y].colour === Colour.White) {
-				need--;
-				break;
-			}
-		}
-		for (var y = 0; y < ROWS; y++) {
-			if (circles[COLS - 1][y].colour === Colour.White) {
-				need--;
-				break;
-			}
-		}
-		return need == 0;
-	}, function () {
-		console.log('You drew a line spanning the full width!');
-	}),
-	new Achievement('Full loop', 'Draw a loop around the perimeter', MoveStage.AfterHitWhite, function () {
-		return (circles[0][0].colour === Colour.White) &&
-				(circles[0][ROWS = 1].colour === Colour.White) &&
-				(circles[COLS - 1][ROWS = 1].colour === Colour.White) &&
-				(circles[COLS - 1][0].colour === Colour.White)
-	}, function () {
-		console.log('You drew a loop around the perimeter!');
-	}),
-	new Achievement('5 red', 'Get a line of exactly 5 red', MoveStage.AfterTrace, function () {
-		if (hitCircles.length != 5) {
-			return false;
-		}
-		for (var i = 0, l = hitCircles.length; i < l; i++) {
-			if (hitCircles[i].colour !== Colour.Red) {
+		}, function () {
+			console.log('You cleared a whole column!');
+		}),
+		MoveStage.AfterHitWhite
+	)
+	.register(
+		new game.achievements.Achievement('Full height', 'Draw a line spanning the full height', function () {
+			if (hitCircles.length < 2) {
 				return false;
 			}
-		}
-		return true;
-	}, function () {
-		console.log('You got exactly 5 red!');
-	}),
-	new Achievement('Swap', 'Perform a swap', MoveStage.AfterSwap, function () {
-		return swaps > 0;
-	}, function () {
-		console.log('You performed a swap!');
-	}) ,
-	new Achievement('All swaps', 'Perform a swap up, down, left and right', MoveStage.AfterSwap, function () {
-		return northSwaps > 0 && southSwaps > 0 && westSwaps > 0 && eastSwaps > 0;
-	}, function () {
-		console.log('You swapped in all 4 directions!');
-	})
-];
-
-totalAchEl.innerHTML = achievements.length;
-
-function checkAchievements (when) {
-	// TODO: Need to split achievements into sections corresponding to when they need to be checked for
-	for (var i = 0, l = achievements.length; i < l; i++) {
-		if (!achievements[i].got) {
-			if(achievements[i].satisfied()){
-				achievements[i].achieve();
-				achievements[i].got = true;
-				gotAchEl.innerHTML = (++gotAch);
+			var need = 2;
+			for (var x = 0; x < COLS; x++) {
+				if (circles[x][0].colour === Colour.White) {
+					need--;
+					break;
+				}
 			}
-		}
-	}
-}
+			for (x = 0; x < COLS; x++) {
+				if (circles[x][ROWS - 1].colour === Colour.White) {
+					need--;
+					break;
+				}
+			}
+			return need == 0;
+		}, function () {
+			console.log('You drew a line spanning the full height!');
+		}),
+		MoveStage.AfterHitWhite
+	)
+	.register(
+		new game.achievements.Achievement('Full width', 'Draw a line spanning the full width', function () {
+			if (hitCircles.length < 2) {
+				return false;
+			}
+			var need = 2;
+			for (var y = 0; y < ROWS; y++) {
+				if (circles[0][y].colour === Colour.White) {
+					need--;
+					break;
+				}
+			}
+			for (y = 0; y < ROWS; y++) {
+				if (circles[COLS - 1][y].colour === Colour.White) {
+					need--;
+					break;
+				}
+			}
+			return need == 0;
+		}, function () {
+			console.log('You drew a line spanning the full width!');
+		}),
+		MoveStage.AfterHitWhite
+	)
+	.register(
+		new game.achievements.Achievement('Full loop', 'Draw a loop around the perimeter', function () {
+			return (circles[0][0].colour === Colour.White) &&
+					(circles[0][ROWS = 1].colour === Colour.White) &&
+					(circles[COLS - 1][ROWS = 1].colour === Colour.White) &&
+					(circles[COLS - 1][0].colour === Colour.White)
+		}, function () {
+			console.log('You drew a loop around the perimeter!');
+		}),
+		MoveStage.AfterHitWhite
+	)
+	.register(
+		new game.achievements.Achievement('5 red', 'Get a line of exactly 5 red', function () {
+			if (hitCircles.length != 5) {
+				return false;
+			}
+			for (var i = 0, l = hitCircles.length; i < l; i++) {
+				if (hitCircles[i].colour !== Colour.Red) {
+					return false;
+				}
+			}
+			return true;
+		}, function () {
+			console.log('You got exactly 5 red!');
+		}),
+		MoveStage.AfterTrace
+	)
+	.register(
+		new game.achievements.Achievement('Surrounded', 'Surround a dot with a loop', function () {
+			return false;
+		}, function () {
+			console.log('You surrounded a dot with a loop!');
+		}),
+		MoveStage.AfterTrace
+	)
+	.register(	
+		new game.achievements.Achievement('Swap', 'Perform a swap', function () {
+			return swaps > 0;
+		}, function () {
+			console.log('You performed a swap!');
+		}),
+		MoveStage.AfterSwap
+	)
+	.register(
+		new game.achievements.Achievement('All swaps', 'Perform a swap up, down, left and right', function () {
+			return game.stats.northSwaps > 0 && 
+					game.stats.southSwaps > 0 &&
+					game.stats.westSwaps > 0 &&
+					game.stats.eastSwaps > 0;
+		}, function () {
+			console.log('You swapped in all 4 directions!');
+		}),
+		MoveStage.AfterSwap
+	);
+
+totalAchEl.innerHTML = game.achievements.count;
 
 function deg2rad (deg) {
 	return (deg * Math.PI) / 180;
@@ -363,19 +468,19 @@ function initStage () {
 					var doSwap = false, swapColour, other;
 					if (lastY - y3 === 1) {
 						// North
-						northSwaps++;
+						game.stats.northSwaps++;
 						doSwap = true;
 					} else if (lastY - y3 === -1) {
 						// South
-						southSwaps++;
+						game.stats.southSwaps++;
 						doSwap = true;
 					} else if (lastX - x3 === 1) {
 						// West
-						westSwaps++;
+						game.stats.westSwaps++;
 						doSwap = true;
 					} else if (lastX - x3 === -1) {
 						// East
-						eastSwaps++;
+						game.stats.eastSwaps++;
 						doSwap = true;
 					}
 					
@@ -385,9 +490,9 @@ function initStage () {
 						circles[x3][y3].colour = other.colour;
 						other.colour = swapColour;
 						mouse.down = false;
-						swapEl.innerHTML = (++swaps);
+						swaps++;
 						givePoints(-POINTSFORSWAP);
-						checkAchievements();
+						game.achievements.check(MoveStage.AfterSwap);
 					}
 					
 					
@@ -422,13 +527,7 @@ function initStage () {
 						lastX = x3;
 						lastY = y3;
 						
-						if (osc !== null && SOUND) {
-							osc.frequency.value = freqs[Math.min(traceLength, freqs.length - 1)];
-							setTimeout(function () {
-								osc.frequency.value = 0;
-							}, 100);
-							console.log('noise');
-						}
+						game.audio.play('gotOne');
 						
 						traceLength ++;
 						
@@ -485,6 +584,7 @@ function drawPoints () {
 	context.shadowBlur = 10;
 	context.shadowOffsetX = 0;
 	context.shadowOffsetY = 0;
+	context.lineJoin = 'round';
 	context.beginPath();
 	for (var i = 0, l = points.length; i < l; i++) {
 		if (i === 0) {
@@ -510,25 +610,21 @@ function drawTracer () {
 
 function clearPoints () {
 
-	// Achievements, um
-	checkAchievements();
+	//game.achievements.check(MoveStage.AfterTrace);
 
 	// Make circles to clear white
 	for (var i = 0, l = hitCircles.length; i < l; i++) {
 		hitCircles[i].colour = Colour.White;
 	}
 	
-	// Achievements
-	checkAchievements();
+	//game.achievements.check(MoveStage.AfterHitWhite);
 	
-	// Apply gravity
 	gravity();
 	
 	// Score
 	givePoints(hitCircles.length);
 	
-	// Achievements...again?
-	checkAchievements();
+	//game.achievements.check(MoveStage.AfterPoints);
 	
 }
 
@@ -569,7 +665,17 @@ function step (timestamp) {
 	requestAnimationFrame(step);
 }
 
-initAudio();
+function makeBrokenGame () {
+	circles[0][0].colour = Colour.Red;
+	circles[1][0].colour = Colour.Red;
+}
+
+function makeBrokenGame2 () {
+	for (var x = 0; x < COLS; x++) {
+		circles[x][0].colour = Colour.Red;
+	}
+}
+
 initStage();
 initCircles();
 requestAnimationFrame(step);
