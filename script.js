@@ -4,7 +4,6 @@ var stage;
 var context;
 var scoreEl = document.querySelector('#score');
 var drawEl = document.querySelector('#draws');
-var loopEl = document.querySelector('#loops') ;
 var swapEl = document.querySelector('#swaps');
 var totalAchEl = document.querySelector('#totalachievements');
 
@@ -48,6 +47,8 @@ var mouse = {
 	down: false
 };
 
+var running = false;
+
 var score = 0;
 var draws = 0;
 var loops = 0;
@@ -63,6 +64,32 @@ var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAni
 							window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
 window.requestAnimationFrame = requestAnimationFrame;                       
+
+document.addEventListener('click', function (e) {
+	var target = e.target.id;
+	if (target === 'playButton') {
+		console.log('Play');
+		showPlay();
+	} else if (target === 'achieveButton') {
+		console.log('Achieve')
+		showAchievements();
+	} else if (target === 'settingsButton') {
+		console.log('Settings');
+		showSettings();
+	}
+});
+
+function showAchievements () {
+	// ...
+}
+
+function showSettings () {
+	// ...
+}
+
+function showPlay () {
+	// ...
+}
 
 function getHitShape () {
 	var l = hitCircles.length, prev = new Point(), xDist = 0, yDist = 0, xChain = [], yChain = [];
@@ -405,6 +432,12 @@ Point.prototype.clone = function () {
 	return new Point(this.x, this.y);
 }
 
+Point.prototype.set = function(x, y) {
+	this.x = x;
+	this.y = y;
+	return this;
+}
+
 function Circle (colour, location) {
 	this.colour = colour;
 	this.location = location;
@@ -421,6 +454,10 @@ function snapToGrip(val, gridSize) {
     return (Math.abs(val - snapCandidate) < (gridSize / 4) ) ? snapCandidate : null;
 };
 
+function randomCircleColour () {
+	return [Colour.Red, Colour.Green, Colour.Blue][~~(Math.random() * 3)];
+}
+
 function initCircles () {
 
 	// Create a COLS x ROWS array to store circles
@@ -431,7 +468,7 @@ function initCircles () {
 	// Populate circle array
 	for (var x = 0; x < COLS; x++) {
 		for (var y = 0; y < ROWS; y++) {
-			circles[x][y] = new Circle([Colour.Red, Colour.Green, Colour.Blue][~~(Math.random() * 3)], new Point(x, y));
+			circles[x][y] = new Circle(randomCircleColour(), new Point(x, y));
 		}
 	}
 
@@ -571,7 +608,12 @@ function initStage () {
 					
 						for (var i = 0, l = hitCircles.length; i < l; i++) {
 							if (hitCircles[i] === circles[x3][y3]) {
-								loopEl.innerHTML = (++loops);
+								loops++;
+								
+								// Disallow going back on yourself
+								if (i === l - 2) {
+									return;
+								}
 								
 								// End the trace by forcing a "mouse up"
 								mouse.down = false;
@@ -696,7 +738,7 @@ function gravity () {
 				for (var y2 = y; y2 > 0; y2--) {
 					circles[x][y2].colour = circles[x][y2 - 1].colour;
 				}
-				circles[x][0].colour = [Colour.Red, Colour.Green, Colour.Blue][~~(Math.random() * 3)];
+				circles[x][0].colour = randomCircleColour();
 			}
 		}
 	}
@@ -723,7 +765,9 @@ function step (timestamp) {
 	drawPoints();
 	drawTracer();
 	drawDots();
-	requestAnimationFrame(step);
+	if (running) {
+		requestAnimationFrame(step);
+	}
 }
 
 function makeDotLoop () {

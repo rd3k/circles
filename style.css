@@ -1,9 +1,65 @@
 body {
-  font-family: Helvetica, Arial;
-  font-size: 11px;
+	font-family: Helvetica, Arial;
+	font-size: 11px;
+}
+
+#outer {
+	position: relative;
+	border: 1px #ccc solid;
+	width: 290px;
+	height: 290px;
+	border-radius: 10px;
+}
+
+#start {
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: #f4f4f4;
+	position: absolute;
+	border-radius: 10px;
+}
+
+#start span {
+	display: block;
+	font-size: 14px;
+	text-align: center;
+	padding-top: 60px;
+}
+
+#start a {
+	background: #444;
+	border-radius: 6px;
+	color: #eee;
+	cursor: default;
+	display: block;
+	width: 100px;
+	line-height: 30px;
+	margin: 20px auto;
+	text-align: center;
+	-webkit-transition: all .2s ease-in-out;
+}
+
+#start a:hover {
+	background: #666;
+	box-shadow: 0 0 5px #555;
+}
+
+#play {
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: red;
+	position: absolute;
+	display: none;
 }
 
 #game {
-  border: 1px #ccc solid;
-  cursor: default;
+	border: 1px #ccc solid;
+	cursor: default;
+	position: absolute;
+	margin: 39px;
+	display: none;
 }

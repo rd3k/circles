@@ -6,12 +6,21 @@
   </head>
 
   <body>
-    <canvas id="game"></canvas>
-    <br/>Score: <span id="score">0</span>
-    <br/>Draws: <span id="draws">0</span>
-    <br/>Loops: <span id="loops">0</span>
-    <br/>Swaps: <span id="swaps">0</span>
-    <br/>Achievements: <span id="gotachievements">0</span> / <span id="totalachievements">0</span>
+  	<div id="outer">
+  		<div id="play">
+		    <canvas id="game"></canvas>
+		    <br/>Score: <span id="score">0</span>
+		    <br/>Draws: <span id="draws">0</span>
+		    <br/>Swaps: <span id="swaps">0</span>
+		    <br/>Achievements: <span id="gotachievements">0</span> / <span id="totalachievements">0</span>
+  		</div>
+	    <div id="start">
+	  		<span>Game title</span>
+	  		<a id="playButton">Play</a>
+	  		<a id="achieveButton">Achievements</a>
+	  		<a id="settingsButton">Settings</a>
+	  	</div>
+  	</div>
     <script src="watch.js"></script>
     <script src="script.js"></script>
     <script>		
