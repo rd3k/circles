@@ -1,3 +1,8 @@
+body {
+  font-family: Helvetica, Arial;
+  font-size: 11px;
+}
+
 #game {
   border: 1px #ccc solid;
   cursor: default;

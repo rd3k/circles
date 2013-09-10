@@ -40,6 +40,8 @@ var XYONLY = true;
 
 var POINTSFORSWAP = 20;
 
+var trackingShape = false;
+
 var mouse = {
 	x: 0,
 	y: 0,
@@ -61,6 +63,27 @@ var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAni
 							window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
 
 window.requestAnimationFrame = requestAnimationFrame;                       
+
+function getHitShape () {
+	var l = hitCircles.length, prev = new Point(), xDist = 0, yDist = 0, xChain = [], yChain = [];
+	if (l > 0) {
+		prev = hitCircles[0].location.clone();
+		for (var i = 1; i < l; i++) {
+			xDist += (hitCircles[i].location.x - prev.x) * i * 5;
+			yDist += (hitCircles[i].location.y - prev.y) * i * 7;
+			xChain.push(xDist);
+			yChain.push(yDist);
+			prev.x = hitCircles[i].location.x;
+			prev.y = hitCircles[i].location.y;
+		}
+	}
+	return {
+		x: xDist,
+		y: yDist,
+		xChain: xChain,
+		yChain: yChain
+	}
+}
 
 game.config = {
 	COLS: 6,
@@ -309,9 +332,37 @@ game.achievements
 	)
 	.register(
 		new game.achievements.Achievement('Surrounded', 'Surround a dot with a loop', function () {
-			return false;
+			if (hitCircles.length !== 9) {
+				return false;
+			}
+			var valid = [
+				'-40,-56', // clockwise from top left, anti from top left
+				'40,-56',  // clockwise from top right, anti from top right
+				'40,56',   // clockwise from bottom right, anti from bottom right
+				'-40,56',  // clockwise from bottom left, anti from bottom left
+				'0,-56',   // clockwise from top middle, anti from top middle
+				'40,0',    // clockwise from right middle, anti from right middle
+				'0,56',    // clockwise from bottom middle, anti from bottom middle
+				'-40,0'    // clockwise from left middle, anti from left middle
+			];
+			var dist = getHitShape();
+			console.log(dist);
+			return valid.indexOf([dist.x, dist.y].toString()) !== -1;
 		}, function () {
 			console.log('You surrounded a dot with a loop!');
+		}),
+		MoveStage.AfterTrace
+	)
+	.register(
+		new game.achievements.Achievement('Table', 'Draw a red table', function () {
+			if (tracingColour !== Colour.Red) {
+				return false;
+			}
+			var valid = ['25,21', '-25,21'];
+			var dist = getHitShape();
+			return valid.indexOf([dist.x, dist.y].toString()) !== -1;
+		}, function () {
+			console.log('You drew a red table!');
 		}),
 		MoveStage.AfterTrace
 	)
@@ -350,8 +401,13 @@ function Point (x, y) {
 	this.y = y;
 }
 
-function Circle () {
-	this.colour = Colour.Grey;
+Point.prototype.clone = function () {
+	return new Point(this.x, this.y);
+}
+
+function Circle (colour, location) {
+	this.colour = colour;
+	this.location = location;
 }
 
 var circles = [];
@@ -361,12 +417,8 @@ var tracingColour = null;
 var traceLength = 0;
 
 function snapToGrip(val, gridSize) {
-    var snap_candidate = gridSize * Math.round(val / gridSize);
-    if (Math.abs(val - snap_candidate) < (gridSize / 4) ) {
-        return snap_candidate;
-    } else {
-        return null;
-    }
+    var snapCandidate = gridSize * Math.round(val / gridSize);
+    return (Math.abs(val - snapCandidate) < (gridSize / 4) ) ? snapCandidate : null;
 };
 
 function initCircles () {
@@ -379,8 +431,7 @@ function initCircles () {
 	// Populate circle array
 	for (var x = 0; x < COLS; x++) {
 		for (var y = 0; y < ROWS; y++) {
-			circles[x][y] = new Circle();
-			circles[x][y].colour = [Colour.Red, Colour.Green, Colour.Blue][~~(Math.random() * 3)]
+			circles[x][y] = new Circle([Colour.Red, Colour.Green, Colour.Blue][~~(Math.random() * 3)], new Point(x, y));
 		}
 	}
 
@@ -393,6 +444,9 @@ function initStage () {
 	context = stage.getContext('2d');
 	var lastX, lastY, shift = false;
 	document.addEventListener('keydown', function (e) {
+		if (e.keyCode === 83 /*s*/) {
+			trackingShape = true;
+		}
 		if (mouse.down || score < POINTSFORSWAP) {
 			return;
 		}
@@ -405,6 +459,9 @@ function initStage () {
 		if (!e.shiftKey && shift) {
 			shift = false;
 			gamemode = Mode.Dots;
+		}
+		if (e.keyCode === 83 /*s*/) {
+			trackingShape = false;
 		}
 	});
 	stage.addEventListener('mousedown', function (e) {
@@ -611,6 +668,10 @@ function drawTracer () {
 function clearPoints () {
 
 	game.achievements.check(MoveStage.AfterTrace);
+	
+	if (trackingShape) {
+		console.log(getHitShape());
+	}
 
 	// Make circles to clear white
 	for (var i = 0, l = hitCircles.length; i < l; i++) {
@@ -665,15 +726,20 @@ function step (timestamp) {
 	requestAnimationFrame(step);
 }
 
-function makeBrokenGame () {
-	circles[0][0].colour = Colour.Red;
-	circles[1][0].colour = Colour.Red;
-}
-
-function makeBrokenGame2 () {
+function makeDotLoop () {
 	for (var x = 0; x < COLS; x++) {
-		circles[x][0].colour = Colour.Red;
+		for (var y = 0; y < ROWS; y++) {
+			circles[x][y].colour = Colour.Black;
+		}
 	}
+	circles[2][2].colour = Colour.Red;
+	circles[2][3].colour = Colour.Red;
+	circles[2][4].colour = Colour.Red;
+	circles[4][2].colour = Colour.Red;
+	circles[4][3].colour = Colour.Red;
+	circles[4][4].colour = Colour.Red;
+	circles[3][2].colour = Colour.Red;
+	circles[3][4].colour = Colour.Red;
 }
 
 initStage();
