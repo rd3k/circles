@@ -283,8 +283,8 @@ game.achievements
 	.register(
 		new game.achievements.Achievement('Full loop', 'Draw a loop around the perimeter', function () {
 			return (circles[0][0].colour === Colour.White) &&
-					(circles[0][ROWS = 1].colour === Colour.White) &&
-					(circles[COLS - 1][ROWS = 1].colour === Colour.White) &&
+					(circles[0][ROWS - 1].colour === Colour.White) &&
+					(circles[COLS - 1][ROWS - 1].colour === Colour.White) &&
 					(circles[COLS - 1][0].colour === Colour.White)
 		}, function () {
 			console.log('You drew a loop around the perimeter!');
@@ -610,21 +610,21 @@ function drawTracer () {
 
 function clearPoints () {
 
-	//game.achievements.check(MoveStage.AfterTrace);
+	game.achievements.check(MoveStage.AfterTrace);
 
 	// Make circles to clear white
 	for (var i = 0, l = hitCircles.length; i < l; i++) {
 		hitCircles[i].colour = Colour.White;
 	}
 	
-	//game.achievements.check(MoveStage.AfterHitWhite);
+	game.achievements.check(MoveStage.AfterHitWhite);
 	
 	gravity();
 	
 	// Score
 	givePoints(hitCircles.length);
 	
-	//game.achievements.check(MoveStage.AfterPoints);
+	game.achievements.check(MoveStage.AfterPoints);
 	
 }
 
