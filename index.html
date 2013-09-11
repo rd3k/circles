@@ -3,6 +3,7 @@
 
   <head>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="onoff.css">
   </head>
 
   <body>
@@ -33,12 +34,34 @@
   		<div id="settings" class="pane">
   			<a class="button small" id="back">Back</a>
 	  		<h2>Settings</h2>
-	  		<span>Sound</span><br/>
-	  		<span>Animation</span><br/>
-	  		<span>Dot size</span>
-	  		<input type="range" min="0.0" max="1.0" step="0.1" value="0.5"/>
-	  		<span>Number of colours</span>
-	  		<input type="range" min="3" max="6" value="3"/>
+	  		<div class="setting">
+	  			<label class="set" for="sound">Sound</label>
+	  			<div class="onoffswitch">
+				    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="sound">
+				    <label class="onoffswitch-label" for="sound">
+				        <div class="onoffswitch-inner"></div>
+				        <div class="onoffswitch-switch"></div>
+				    </label>
+				</div>
+	  		</div>
+	  		<div class="setting">
+	  			<label class="set" for="animation">Animation</label>
+	  			<div class="onoffswitch">
+				    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="animation">
+				    <label class="onoffswitch-label" for="animation">
+				        <div class="onoffswitch-inner"></div>
+				        <div class="onoffswitch-switch"></div>
+				    </label>
+				</div>
+	  		</div>
+	  		<div class="setting">
+		  		<label class="set" for="dotsizer">Dot size</label>
+		  		<input id="dotsizer" type="range" min="3" max="14" value="5"/><div id="dotsizedot"></div>
+	  		</div>
+	  		<div class="setting">
+		  		<label class="set">Colours</label>
+		  		<input type="range" min="3" max="6" value="3"/>
+	  		</div>
   		</div>
 	    <div id="start" class="pane">
 	  		<h1>Game title</h1>
@@ -57,20 +80,6 @@
   	</div>
     <script src="watch.js"></script>
     <script src="script.js"></script>
-    <script>		
-		watch(game.achievements, 'gotCount', function (property, method, newVal, oldVal) {
-		    game.achievements.gotEl.innerHTML = newVal;
-		});
-		watch(game.stats, 'swaps', function (property, method, newVal, oldVal) {
-		    swapEl.innerHTML = newVal;
-		});
-		watch(game.stats, 'score', function (property, method, newVal, oldVal) {
-			scoreEl.innerHTML = newVal;
-		});
-		watch(game.stats, 'draws', function (property, method, newVal, oldVal) {
-			drawEl.innerHTML = newVal;
-		});
-    </script>
   </body>
 
 </html>

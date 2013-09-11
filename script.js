@@ -1,8 +1,10 @@
+window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
+							window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
+
 var game = {};
 
 var stage;
 var context;
-var scoreEl = document.querySelector('#score');
 var drawEl = document.querySelector('#draws');
 var swapEl = document.querySelector('#swaps');
 var totalAchEl = document.querySelector('#totalachievements');
@@ -18,47 +20,39 @@ Colour[Colour['6'] = 'Grey']    = 6;
 Colour[Colour['7'] = 'Magenta'] = 7;
 Colour[Colour['8'] = 'Maroon']  = 8;
 
-var Mode = {};
-Mode[Mode['0'] = 'Dots']   = 0;
-Mode[Mode['1'] = 'Jewels'] = 1;
+/**
+ * game.PlayMode
+ **/
+game.PlayMode = {};
+game.PlayMode[game.PlayMode['0'] = 'Dots']   = 0;
+game.PlayMode[game.PlayMode['1'] = 'Jewels'] = 1;
 
-var MoveStage = {};
-MoveStage[MoveStage['1'] = 'AfterTrace']    = 1;
-MoveStage[MoveStage['2'] = 'AfterHitWhite'] = 2;
-MoveStage[MoveStage['4'] = 'AfterPoints']   = 4;
-MoveStage[MoveStage['8'] = 'AfterSwap']     = 8;
+/**
+ * game.MoveStage
+ **/
+game.MoveStage = {};
+game.MoveStage[game.MoveStage['0'] = 'AfterTrace']    = 0;
+game.MoveStage[game.MoveStage['1'] = 'AfterHitWhite'] = 1;
+game.MoveStage[game.MoveStage['2'] = 'AfterPoints']   = 2;
+game.MoveStage[game.MoveStage['3'] = 'AfterSwap']     = 3;
 
-var COLS = 6;
-var ROWS = 6;
-var WESTGAP = 30;
-var NORTHGAP = 30;
+game.trackingShape = false;
 
-var BACKGROUND = Colour.White;
+game.dom = {
+	score: document.querySelector('#score'),
+	
+}
 
-var SOUND = false;
-
-var XYONLY = true;
-
-var POINTSFORSWAP = 20;
-var LOOPPOINTS = 5;
-
-var trackingShape = false;
-
-var mouse = {
+mouse = {
 	x: 0,
 	y: 0,
 	down: false
 };
 
-var running = false;
+game.running = false;
 
-var gamemode = Mode.Dots;
-
-var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
-							window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
-
-window.requestAnimationFrame = requestAnimationFrame;                       
-
+game.mode = game.PlayMode.Dots;
+                    
 document.addEventListener('click', function (e) {
 	var target = e.target.id;
 	if (target === 'playButton') {
@@ -104,7 +98,7 @@ function showSettings () {
 
 function showPlay () {
 	document.body.className = 'play';
-	running = true;
+	game.running = true;
 	initStage();
 	initCircles();
 	requestAnimationFrame(step);
@@ -135,11 +129,21 @@ function getHitShape () {
 	}
 }
 
+game.over = function () {
+	console.log('Game over');
+	game.running = false;
+}
+
 game.config = {
 	COLS: 6,
 	ROWS: 6,
 	WESTGAP: 30,
-	NORTHGAP: 30
+	NORTHGAP: 30,
+	BACKGROUND: Colour.White,
+	POINTSFORSWAP: 20,
+	LOOPPOINTS: 5,
+	XYONLY: true,
+	DOTSIZE: 2,
 };
 
 game.stats = {
@@ -202,6 +206,16 @@ game.audio = {
 
 game.audio.init();
 
+game.buyables = {
+	list: [],
+	getHtml: function () {
+		return '';
+	},
+	Buyable: function () {
+		
+	}	
+};
+
 game.achievements = {
 	gotCount: 0,
 	count: 0,
@@ -213,7 +227,7 @@ game.achievements = {
 		AfterSwap: []
 	},
 	register: function (achievement, checkWhen) {
-		this.toCheck[MoveStage[checkWhen]].push(achievement);
+		this.toCheck[game.MoveStage[checkWhen]].push(achievement);
 		this.count++;
 		return this;
 	},
@@ -221,7 +235,7 @@ game.achievements = {
 		return this.toCheck.AfterTrace.concat(this.toCheck.AfterHitWhite, this.toCheck.AfterPoints, this.toCheck.AfterSwap);
 	},
 	check: function (when) {
-		this.toCheck[MoveStage[when]].forEach(function(achievement){
+		this.toCheck[game.MoveStage[when]].forEach(function(achievement){
 			if (!achievement.got) {
 				if (achievement.satisfied()) {
 					achievement.achieve();
@@ -231,7 +245,7 @@ game.achievements = {
 			}
 		});
 	},
-	Achievement: function(name, description, need, achieve) {
+	Achievement: function (name, description, need, achieve) {
 		this.got = false;
 		this.name = name;
 		this.description = description;
@@ -247,7 +261,7 @@ game.achievements
 		}, function () {
 			console.log('Got a loop, yay!');
 		}),
-		MoveStage.AfterTrace
+		game.MoveStage.AfterTrace
 	)
 	.register(
 		new game.achievements.Achievement('Score of 10', 'Get a score of 10', function () {
@@ -255,7 +269,7 @@ game.achievements
 		}, function () {
 			console.log('Got a score of 10, yay!');
 		}),
-		MoveStage.AfterTrace
+		game.MoveStage.AfterTrace
 	)
 	.register(
 		new game.achievements.Achievement('Remove 4', 'Remove a line of 4', function () {
@@ -263,18 +277,18 @@ game.achievements
 		}, function () {
 			console.log('Got a line of 4, yay!');
 		}),
-		MoveStage.AfterTrace
+		game.MoveStage.AfterTrace
 	)
 	.register(
 		new game.achievements.Achievement('Clear row', 'Clear a full row', function () {
-			for (var y = 0; y < ROWS; y++) {
+			for (var y = 0; y < game.config.ROWS; y++) {
 				if (circles[0][y].colour === Colour.White) {
-					for (var x = 1; x < COLS - 1; x++) {
+					for (var x = 1; x < game.config.COLS - 1; x++) {
 						if (circles[x][y].colour !== Colour.White) {
 							break;
 						}
 					}
-					if (circles[COLS - 1][y].colour === Colour.White) {
+					if (circles[game.config.COLS - 1][y].colour === Colour.White) {
 						return true;
 					}
 				}
@@ -283,18 +297,18 @@ game.achievements
 		}, function () {
 			console.log('You cleared a whole row!');
 		}),
-		MoveStage.AfterHitWhite
+		game.MoveStage.AfterHitWhite
 	)
 	.register(
 		new game.achievements.Achievement('Clear column', 'Clear a full column', function () {
-			for (var x = 0; x < COLS; x++) {
+			for (var x = 0; x < game.config.COLS; x++) {
 				if (circles[x][0].colour === Colour.White) {
-					for (var y = 1; y < ROWS - 1; y++) {
+					for (var y = 1; y < game.config.ROWS - 1; y++) {
 						if (circles[x][y].colour !== Colour.White) {
 							break;
 						}
 					}
-					if (circles[x][ROWS - 1].colour === Colour.White) {
+					if (circles[x][game.config.ROWS - 1].colour === Colour.White) {
 						return true;
 					}
 				}
@@ -303,22 +317,22 @@ game.achievements
 		}, function () {
 			console.log('You cleared a whole column!');
 		}),
-		MoveStage.AfterHitWhite
+		game.MoveStage.AfterHitWhite
 	)
 	.register(
 		new game.achievements.Achievement('Full height', 'Draw a line spanning the full height', function () {
 			if (hitCircles.length < 2) {
 				return false;
 			}
-			var need = 2;
-			for (var x = 0; x < COLS; x++) {
+			var x, need = 2;
+			for (x = 0; x < game.config.COLS; x++) {
 				if (circles[x][0].colour === Colour.White) {
 					need--;
 					break;
 				}
 			}
-			for (x = 0; x < COLS; x++) {
-				if (circles[x][ROWS - 1].colour === Colour.White) {
+			for (x = 0; x < game.config.COLS; x++) {
+				if (circles[x][game.config.ROWS - 1].colour === Colour.White) {
 					need--;
 					break;
 				}
@@ -327,22 +341,22 @@ game.achievements
 		}, function () {
 			console.log('You drew a line spanning the full height!');
 		}),
-		MoveStage.AfterHitWhite
+		game.MoveStage.AfterHitWhite
 	)
 	.register(
 		new game.achievements.Achievement('Full width', 'Draw a line spanning the full width', function () {
 			if (hitCircles.length < 2) {
 				return false;
 			}
-			var need = 2;
-			for (var y = 0; y < ROWS; y++) {
+			var y, need = 2;
+			for (y = 0; y < game.config.ROWS; y++) {
 				if (circles[0][y].colour === Colour.White) {
 					need--;
 					break;
 				}
 			}
-			for (y = 0; y < ROWS; y++) {
-				if (circles[COLS - 1][y].colour === Colour.White) {
+			for (y = 0; y < game.config.ROWS; y++) {
+				if (circles[game.config.COLS - 1][y].colour === Colour.White) {
 					need--;
 					break;
 				}
@@ -351,18 +365,18 @@ game.achievements
 		}, function () {
 			console.log('You drew a line spanning the full width!');
 		}),
-		MoveStage.AfterHitWhite
+		game.MoveStage.AfterHitWhite
 	)
 	.register(
 		new game.achievements.Achievement('Full loop', 'Draw a loop around the perimeter', function () {
 			return (circles[0][0].colour === Colour.White) &&
-					(circles[0][ROWS - 1].colour === Colour.White) &&
-					(circles[COLS - 1][ROWS - 1].colour === Colour.White) &&
-					(circles[COLS - 1][0].colour === Colour.White)
+					(circles[0][game.config.ROWS - 1].colour === Colour.White) &&
+					(circles[game.config.COLS - 1][game.config.ROWS - 1].colour === Colour.White) &&
+					(circles[game.config.COLS - 1][0].colour === Colour.White)
 		}, function () {
 			console.log('You drew a loop around the perimeter!');
 		}),
-		MoveStage.AfterHitWhite
+		game.MoveStage.AfterHitWhite
 	)
 	.register(
 		new game.achievements.Achievement('5 red', 'Get a line of exactly 5 red', function () {
@@ -378,7 +392,7 @@ game.achievements
 		}, function () {
 			console.log('You got exactly 5 red!');
 		}),
-		MoveStage.AfterTrace
+		game.MoveStage.AfterTrace
 	)
 	.register(
 		new game.achievements.Achievement('Surrounded', 'Surround a dot with a loop', function () {
@@ -401,7 +415,7 @@ game.achievements
 		}, function () {
 			console.log('You surrounded a dot with a loop!');
 		}),
-		MoveStage.AfterTrace
+		game.MoveStage.AfterTrace
 	)
 	.register(
 		new game.achievements.Achievement('Table', 'Draw a red table', function () {
@@ -414,7 +428,7 @@ game.achievements
 		}, function () {
 			console.log('You drew a red table!');
 		}),
-		MoveStage.AfterTrace
+		game.MoveStage.AfterTrace
 	)
 	.register(	
 		new game.achievements.Achievement('Swap', 'Perform a swap', function () {
@@ -422,7 +436,7 @@ game.achievements
 		}, function () {
 			console.log('You performed a swap!');
 		}),
-		MoveStage.AfterSwap
+		game.MoveStage.AfterSwap
 	)
 	.register(
 		new game.achievements.Achievement('All swaps', 'Perform a swap up, down, left and right', function () {
@@ -433,7 +447,7 @@ game.achievements
 		}, function () {
 			console.log('You swapped in all 4 directions!');
 		}),
-		MoveStage.AfterSwap
+		game.MoveStage.AfterSwap
 	);
 
 totalAchEl.innerHTML = game.achievements.count;
@@ -445,6 +459,10 @@ function deg2rad (deg) {
 function clear () {
 	context.clearRect(0, 0, stage.width, stage.height);
 }
+
+/**
+ * Point
+ **/
 
 function Point (x, y) {
 	this.x = x;
@@ -483,14 +501,16 @@ function randomCircleColour () {
 
 function initCircles () {
 
+	var x, y;
+
 	// Create a COLS x ROWS array to store circles
-	for (var i = 0; i < COLS; i++) {
-		circles[i] = new Array(ROWS);
+	for (x = 0; x < game.config.COLS; x++) {
+		circles[x] = new Array(game.config.ROWS);
 	}
 	
 	// Populate circle array
-	for (var x = 0; x < COLS; x++) {
-		for (var y = 0; y < ROWS; y++) {
+	for (x = 0; x < game.config.COLS; x++) {
+		for (y = 0; y < game.config.ROWS; y++) {
 			circles[x][y] = new Circle(randomCircleColour(), new Point(x, y));
 		}
 	}
@@ -505,23 +525,23 @@ function initStage () {
 	var lastX, lastY, shift = false;
 	document.addEventListener('keydown', function (e) {
 		if (e.keyCode === 83 /*s*/) {
-			trackingShape = true;
+			game.trackingShape = true;
 		}
-		if (mouse.down || game.stats.score < POINTSFORSWAP) {
+		if (mouse.down || game.stats.score < game.config.POINTSFORSWAP) {
 			return;
 		}
 		if (e.shiftKey) {
 			shift = true;
-			gamemode = Mode.Jewels;
+			game.mode = game.PlayMode.Jewels;
 		}
 	});
 	document.addEventListener('keyup', function (e) {
 		if (!e.shiftKey && shift) {
 			shift = false;
-			gamemode = Mode.Dots;
+			game.mode = game.PlayMode.Dots;
 		}
 		if (e.keyCode === 83 /*s*/) {
-			trackingShape = false;
+			game.trackingShape = false;
 		}
 	});
 	stage.addEventListener('mousedown', function (e) {
@@ -533,14 +553,14 @@ function initStage () {
 		x = snapToGrip(x, 30);
 		y = snapToGrip(y, 30);
 		if (x !== null && y !== null) {
-			x2 = x - WESTGAP;
-			y2 = y - NORTHGAP;
+			x2 = x - game.config.WESTGAP;
+			y2 = y - game.config.NORTHGAP;
 			x2 /= 30;
 			y2 /= 30;
-			if (x2 >= 0 && x2 < COLS && y2 >= 0 && y2 < ROWS) {
+			if (x2 >= 0 && x2 < game.config.COLS && y2 >= 0 && y2 < game.config.ROWS) {
 				lastX = x2;
 				lastY = y2;
-				if (gamemode === Mode.Jewels) {
+				if (game.mode === game.PlayMode.Jewels) {
 					hitCircles.push(circles[x2][y2]);
 				} else {
 					points.push(new Point(x, y));
@@ -571,16 +591,16 @@ function initStage () {
 			x2 = snapToGrip(x, 30);
 			y2 = snapToGrip(y, 30);
 			if (x2 !== null && y2 !== null) {
-				x3 = x2 - WESTGAP;
-				y3 = y2 - NORTHGAP;
+				x3 = x2 - game.config.WESTGAP;
+				y3 = y2 - game.config.NORTHGAP;
 				x3 /= 30;
 				y3 /= 30;
 				
-				if (x3 < 0 || x3 >= COLS || y3 < 0 || y3 >= ROWS) {
+				if (x3 < 0 || x3 >= game.config.COLS || y3 < 0 || y3 >= game.config.ROWS) {
 					return;
 				}
 				
-				if (gamemode === Mode.Jewels) {
+				if (game.mode === game.PlayMode.Jewels) {
 					
 					var doSwap = false, swapColour, other;
 					if (lastY - y3 === 1) {
@@ -608,28 +628,28 @@ function initStage () {
 						other.colour = swapColour;
 						mouse.down = false;
 						game.stats.swaps++;
-						givePoints(-POINTSFORSWAP);
-						game.achievements.check(MoveStage.AfterSwap);
-						if (game.stats.score < POINTSFORSWAP) {
-							gamemode = Mode.Dots;
+						game.stats.score -= game.config.POINTSFORSWAP;
+						game.achievements.check(game.MoveStage.AfterSwap);
+						if (game.stats.score < game.config.POINTSFORSWAP) {
+							game.mode = game.PlayMode.Dots;
 						}
 						if (!game.isStillPlayable()) {
-							console.log('GAME OVER');
+							game.over();
 						}
 					}
 					
 					
-				} else if (gamemode === Mode.Dots) {
+				} else if (game.mode === game.PlayMode.Dots) {
 				
 					// Has to be between circles of the same colour
 					if (circles[x3][y3].colour !== tracingColour) {
 						return;
 					}
 					
-					if (( !XYONLY && 
+					if (( !game.config.XYONLY && 
 							( Math.abs(lastX - x3) === 1 || Math.abs(lastY - y3) === 1 )
 						) ||
-						( XYONLY && 
+						( game.config.XYONLY && 
 							( Math.abs(lastX - x3) === 1 && lastY === y3 ) || 
 							( Math.abs(lastY - y3) === 1 && lastX === x3 )
 						)
@@ -637,13 +657,14 @@ function initStage () {
 					
 						for (var i = 0, l = hitCircles.length; i < l; i++) {
 							if (hitCircles[i] === circles[x3][y3]) {
-								game.stats.loops++;
-								givePoints(LOOPPOINTS);
 								
 								// Disallow going back on yourself
 								if (i === l - 2) {
 									return;
 								}
+								
+								game.stats.loops++;
+								game.stats.score += game.config.LOOPPOINTS;
 								
 								// End the trace by forcing a "mouse up"
 								mouse.down = false;
@@ -669,17 +690,17 @@ function initStage () {
 }
 
 function drawStage () {
-	context.fillStyle = Colour[BACKGROUND];
+	context.fillStyle = Colour[game.config.BACKGROUND];
 	context.fillRect(0, 0, stage.width, stage.height);
 }
 
 function drawDots () {
-	var x, y, size = 10;
+	var x, y, size = game.config.DOTSIZE;
 	context.lineWidth = 1;
 	context.globalAlpha = 0.4;
-	if (gamemode === Mode.Dots) {
-		for (x = 0; x < COLS; x++) {
-			for (y = 0; y < ROWS; y++) {
+	if (game.mode === game.PlayMode.Dots) {
+		for (x = 0; x < game.config.COLS; x++) {
+			for (y = 0; y < game.config.ROWS; y++) {
 				context.fillStyle = Colour[circles[x][y].colour];
 				context.strokeStyle = context.fillStyle;
 				context.beginPath();
@@ -688,11 +709,11 @@ function drawDots () {
 				context.fill();
 			}
 		}
-	} else if (gamemode === Mode.Jewels) {
+	} else if (game.mode === game.PlayMode.Jewels) {
 		context.globalAlpha = 1.0;
 		var _x, _y;
-		for (x = 0; x < COLS; x++) {
-			for (y = 0; y < ROWS; y++) {
+		for (x = 0; x < game.config.COLS; x++) {
+			for (y = 0; y < game.config.ROWS; y++) {
 				_x = 30 + (x * 30);
 				_y = 30 + (y * 30);
 				context.fillStyle = Colour[circles[x][y].colour];
@@ -710,9 +731,9 @@ function drawDots () {
 	context.globalAlpha = 1.0;
 }
 
-function drawPoints () {
+function drawTracer () {
 	var i, l;
-	context.lineWidth = 3;
+	context.lineWidth = game.config.DOTSIZE / 2;
 	context.shadowColor = '#aaa';
 	context.shadowBlur = 10;
 	context.shadowOffsetX = 0;
@@ -728,13 +749,7 @@ function drawPoints () {
 	}
 	context.strokeStyle = Colour[tracingColour];
     context.stroke();
-}
-
-function drawTracer () {
-	if (points.length > 0) {
-		context.lineWidth = 3;
-		context.beginPath();
-		context.moveTo(points[points.length - 1].x, points[points.length - 1].y);
+	if (l > 0) {
 		context.lineTo(mouse.x, mouse.y);
 		context.strokeStyle = Colour[Colour.Grey];
 		context.stroke();
@@ -744,9 +759,9 @@ function drawTracer () {
 function clearPoints () {
 	var i, l;
 
-	game.achievements.check(MoveStage.AfterTrace);
+	game.achievements.check(game.MoveStage.AfterTrace);
 	
-	if (trackingShape) {
+	if (game.trackingShape) {
 		console.log(getHitShape());
 	}
 
@@ -755,25 +770,24 @@ function clearPoints () {
 		hitCircles[i].colour = Colour.White;
 	}
 	
-	game.achievements.check(MoveStage.AfterHitWhite);
+	game.achievements.check(game.MoveStage.AfterHitWhite);
 	
 	gravity();
 	
-	// Score
-	givePoints(hitCircles.length);
+	game.stats.score += hitCircles.length;
 	
-	game.achievements.check(MoveStage.AfterPoints);
+	game.achievements.check(game.MoveStage.AfterPoints);
 	
 	if (!game.isStillPlayable()) {
-		console.log('GAME OVER');
+		game.over();
 	}
 	
 }
 
 function gravity () {
 	var x, y, y2;
-	for (x = 0; x < COLS; x++) {
-		for (y = 0; y < ROWS; y++) {
+	for (x = 0; x < game.config.COLS; x++) {
+		for (y = 0; y < game.config.ROWS; y++) {
 			if (circles[x][y].colour === Colour.White) {
 				for (y2 = y; y2 > 0; y2--) {
 					circles[x][y2].colour = circles[x][y2 - 1].colour;
@@ -786,8 +800,8 @@ function gravity () {
 
 function clearAllColour (c) {
 	var x, y;
-	for (x = 0; x < COLS; x++) {
-		for (y = 0; y < ROWS; y++) {
+	for (x = 0; x < game.config.COLS; x++) {
+		for (y = 0; y < game.config.ROWS; y++) {
 			if (circles[x][y].colour === c) {
 				circles[x][y].colour = Colour.White;
 			}
@@ -796,21 +810,17 @@ function clearAllColour (c) {
 	gravity();
 }
 
-function givePoints (p) {
-	game.stats.score += p;
-}
-
 game.isStillPlayable = function () {
 	var x, y;
-	for (x = 0; x < COLS - 1; x++) {
-		for (y = 0; y < ROWS - 1; y++) {
+	for (x = 0; x < game.config.COLS - 1; x++) {
+		for (y = 0; y < game.config.ROWS - 1; y++) {
 			if (circles[x][y].colour === circles[x + 1][y].colour) {
 				return true;
 			}
 			if (circles[x][y].colour === circles[x][y + 1].colour) {
 				return true;
 			}
-			if (!XYONLY) {
+			if (!game.config.XYONLY) {
 				if (x !== 0 && circles[x][y].colour === circles[x + 1][y - 1].colour) {
 					return true;
 				}
@@ -826,10 +836,30 @@ game.isStillPlayable = function () {
 function step (timestamp) {
 	clear();
 	drawStage();
-	drawPoints();
 	drawTracer();
 	drawDots();
-	if (running) {
+	if (game.running) {
 		requestAnimationFrame(step);
 	}
 }
+
+watch(game.achievements, 'gotCount', function (property, method, newVal, oldVal) {
+    game.achievements.gotEl.innerHTML = newVal;
+});
+watch(game.stats, 'swaps', function (property, method, newVal, oldVal) {
+    swapEl.innerHTML = newVal;
+});
+watch(game.stats, 'score', function (property, method, newVal, oldVal) {
+	game.dom.score.innerHTML = newVal;
+});
+watch(game.stats, 'draws', function (property, method, newVal, oldVal) {
+	drawEl.innerHTML = newVal;
+});
+
+var ds = document.getElementById('dotsizer');
+ds.addEventListener('change', function (e) {
+	var dsd = document.getElementById('dotsizedot');
+	dsd.style.width = e.target.value + 'px';
+	dsd.style.height = e.target.value + 'px';
+	dsd.style.marginTop = (e.target.max - e.target.value) + (e.target.value / 2) + 'px';
+})
