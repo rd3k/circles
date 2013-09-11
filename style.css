@@ -4,11 +4,14 @@ body {
 }
 
 #outer {
-	position: relative;
+	position: absolute;
 	border: 1px #ccc solid;
 	width: 290px;
 	height: 290px;
 	border-radius: 10px;
+	margin: -145px;
+	top: 50%;
+	left: 50%;
 }
 
 #start {
@@ -19,13 +22,14 @@ body {
 	background: #f4f4f4;
 	position: absolute;
 	border-radius: 10px;
+	display: none;
 }
 
-#start span {
+#start h1 {
 	display: block;
-	font-size: 14px;
+	font-size: 18px;
 	text-align: center;
-	padding-top: 60px;
+	padding-top: 50px;
 }
 
 #start a {
@@ -34,7 +38,7 @@ body {
 	color: #eee;
 	cursor: default;
 	display: block;
-	width: 100px;
+	width: 150px;
 	line-height: 30px;
 	margin: 20px auto;
 	text-align: center;
@@ -46,20 +50,84 @@ body {
 	box-shadow: 0 0 5px #555;
 }
 
+#achievements {
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: #ccc;
+	position: absolute;
+	border-radius: 10px;
+	display: none;
+}
+
+#achievements h2 {
+	display: block;
+	font-size: 12px;
+	text-align: center;
+	padding-top: 60px;
+}
+
+#settings {
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: #ccc;
+	position: absolute;
+	border-radius: 10px;
+	display: none;
+}
+
 #play {
 	top: 0;
 	left: 0;
 	right: 0;
 	bottom: 0;
-	background: red;
+	background: #eee;
 	position: absolute;
 	display: none;
+	border-radius: 10px;
+}
+
+#score {
+	font-size: 16px;
+	font-weight: bold;
+	display: block;
+	text-align: center;
+	line-height: 45px;
 }
 
 #game {
-	border: 1px #ccc solid;
 	cursor: default;
 	position: absolute;
-	margin: 39px;
-	display: none;
+	margin: 40px;
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+#store {
+	position: absolute;
+	width: 175px;
+	height: 150px;
+	background: rgba(240,240,240,0.9);
+	border-radius: 10px;
+	top: 58px;
+	left: 58px;
+}
+
+.start #start {
+	display: block;
+}
+
+.achievements #achievements {
+	display: block;
+}
+
+.settings #settings {
+	display: block;
+}
+
+.play #play {
+	display: block;
 }

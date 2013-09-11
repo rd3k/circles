@@ -76,19 +76,31 @@ document.addEventListener('click', function (e) {
 	} else if (target === 'settingsButton') {
 		console.log('Settings');
 		showSettings();
+	} else if (target === 'score') {
+		console.log('show store');
 	}
 });
 
+function showStart () {
+	document.body.className = 'start';
+}
+
+showStart();
+
 function showAchievements () {
-	// ...
+	document.body.className = 'achievements';
 }
 
 function showSettings () {
-	// ...
+	document.body.className = 'settings';
 }
 
 function showPlay () {
-	// ...
+	document.body.className = 'play';
+	running = true;
+	initStage();
+	initCircles();
+	requestAnimationFrame(step);
 }
 
 function getHitShape () {
@@ -587,6 +599,7 @@ function initStage () {
 						swaps++;
 						givePoints(-POINTSFORSWAP);
 						game.achievements.check(MoveStage.AfterSwap);
+						gamemode = Mode.Dots;
 					}
 					
 					
@@ -769,23 +782,3 @@ function step (timestamp) {
 		requestAnimationFrame(step);
 	}
 }
-
-function makeDotLoop () {
-	for (var x = 0; x < COLS; x++) {
-		for (var y = 0; y < ROWS; y++) {
-			circles[x][y].colour = Colour.Black;
-		}
-	}
-	circles[2][2].colour = Colour.Red;
-	circles[2][3].colour = Colour.Red;
-	circles[2][4].colour = Colour.Red;
-	circles[4][2].colour = Colour.Red;
-	circles[4][3].colour = Colour.Red;
-	circles[4][4].colour = Colour.Red;
-	circles[3][2].colour = Colour.Red;
-	circles[3][4].colour = Colour.Red;
-}
-
-initStage();
-initCircles();
-requestAnimationFrame(step);
