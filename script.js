@@ -8,13 +8,15 @@ var swapEl = document.querySelector('#swaps');
 var totalAchEl = document.querySelector('#totalachievements');
 
 var Colour = {};
-Colour[Colour['0'] = 'White']  = 0;
-Colour[Colour['1'] = 'Black']  = 1;
-Colour[Colour['2'] = 'Red']    = 2;
-Colour[Colour['3'] = 'Green']  = 3;
-Colour[Colour['4'] = 'Blue']   = 4;
-Colour[Colour['5'] = 'Yellow'] = 5;
-Colour[Colour['7'] = 'Grey']   = 7;
+Colour[Colour['0'] = 'White']   = 0;
+Colour[Colour['1'] = 'Black']   = 1;
+Colour[Colour['2'] = 'Red']     = 2;
+Colour[Colour['3'] = 'Green']   = 3;
+Colour[Colour['4'] = 'Blue']    = 4;
+Colour[Colour['5'] = 'Yellow']  = 5;
+Colour[Colour['6'] = 'Grey']    = 6;
+Colour[Colour['7'] = 'Magenta'] = 7;
+Colour[Colour['8'] = 'Maroon']  = 8;
 
 var Mode = {};
 Mode[Mode['0'] = 'Dots']   = 0;
@@ -38,6 +40,7 @@ var SOUND = false;
 var XYONLY = true;
 
 var POINTSFORSWAP = 20;
+var LOOPPOINTS = 5;
 
 var trackingShape = false;
 
@@ -49,16 +52,7 @@ var mouse = {
 
 var running = false;
 
-var score = 0;
-var draws = 0;
-var loops = 0;
-var swaps = 0;
 var gamemode = Mode.Dots;
-
-var northSwaps = 0;
-var southSwaps = 0;
-var westSwaps = 0;
-var eastSwaps = 0;
 
 var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame ||
 							window.webkitRequestAnimationFrame || window.msRequestAnimationFrame;
@@ -76,8 +70,17 @@ document.addEventListener('click', function (e) {
 	} else if (target === 'settingsButton') {
 		console.log('Settings');
 		showSettings();
+	} else if (target === 'about') {
+		showAbout();
 	} else if (target === 'score') {
 		console.log('show store');
+		showStore();
+	} else if (target === 'back') {
+		showStart();
+	} else if (target === 'random') {
+		console.log('random');
+	} else if (target === 'fill') {
+		console.log('fill');
 	}
 });
 
@@ -86,6 +89,10 @@ function showStart () {
 }
 
 showStart();
+
+function showAbout() {
+	document.body.className = 'about';
+}
 
 function showAchievements () {
 	document.body.className = 'achievements';
@@ -103,11 +110,15 @@ function showPlay () {
 	requestAnimationFrame(step);
 }
 
+function showStore () {
+	document.body.className = 'play store';
+}
+
 function getHitShape () {
-	var l = hitCircles.length, prev = new Point(), xDist = 0, yDist = 0, xChain = [], yChain = [];
+	var i, l = hitCircles.length, prev = new Point(), xDist = 0, yDist = 0, xChain = [], yChain = [];
 	if (l > 0) {
 		prev = hitCircles[0].location.clone();
-		for (var i = 1; i < l; i++) {
+		for (i = 1; i < l; i++) {
 			xDist += (hitCircles[i].location.x - prev.x) * i * 5;
 			yDist += (hitCircles[i].location.y - prev.y) * i * 7;
 			xChain.push(xDist);
@@ -232,7 +243,7 @@ game.achievements = {
 game.achievements
 	.register(
 		new game.achievements.Achievement('Loop', 'Get a loop!', function () {
-			return loops > 0;
+			return game.stats.loops > 0;
 		}, function () {
 			console.log('Got a loop, yay!');
 		}),
@@ -240,7 +251,7 @@ game.achievements
 	)
 	.register(
 		new game.achievements.Achievement('Score of 10', 'Get a score of 10', function () {
-			return score >= 10;
+			return game.stats.score >= 10;
 		}, function () {
 			console.log('Got a score of 10, yay!');
 		}),
@@ -407,7 +418,7 @@ game.achievements
 	)
 	.register(	
 		new game.achievements.Achievement('Swap', 'Perform a swap', function () {
-			return swaps > 0;
+			return game.stats.swaps > 0;
 		}, function () {
 			console.log('You performed a swap!');
 		}),
@@ -467,7 +478,7 @@ function snapToGrip(val, gridSize) {
 };
 
 function randomCircleColour () {
-	return [Colour.Red, Colour.Green, Colour.Blue][~~(Math.random() * 3)];
+	return [Colour.Red, Colour.Green, Colour.Blue, Colour.Black, Colour.Magenta, Colour.Maroon][~~(Math.random() * 6)];
 }
 
 function initCircles () {
@@ -496,7 +507,7 @@ function initStage () {
 		if (e.keyCode === 83 /*s*/) {
 			trackingShape = true;
 		}
-		if (mouse.down || score < POINTSFORSWAP) {
+		if (mouse.down || game.stats.score < POINTSFORSWAP) {
 			return;
 		}
 		if (e.shiftKey) {
@@ -544,7 +555,7 @@ function initStage () {
 		mouse.down = false;
 		if (points.length > 1) {
 			clearPoints();
-			drawEl.innerHTML = (++draws);
+			game.stats.draws++;
 		}
 		points = [];
 		hitCircles = [];
@@ -596,10 +607,15 @@ function initStage () {
 						circles[x3][y3].colour = other.colour;
 						other.colour = swapColour;
 						mouse.down = false;
-						swaps++;
+						game.stats.swaps++;
 						givePoints(-POINTSFORSWAP);
 						game.achievements.check(MoveStage.AfterSwap);
-						gamemode = Mode.Dots;
+						if (game.stats.score < POINTSFORSWAP) {
+							gamemode = Mode.Dots;
+						}
+						if (!game.isStillPlayable()) {
+							console.log('GAME OVER');
+						}
 					}
 					
 					
@@ -621,7 +637,8 @@ function initStage () {
 					
 						for (var i = 0, l = hitCircles.length; i < l; i++) {
 							if (hitCircles[i] === circles[x3][y3]) {
-								loops++;
+								game.stats.loops++;
+								givePoints(LOOPPOINTS);
 								
 								// Disallow going back on yourself
 								if (i === l - 2) {
@@ -657,31 +674,34 @@ function drawStage () {
 }
 
 function drawDots () {
+	var x, y, size = 10;
 	context.lineWidth = 1;
 	context.globalAlpha = 0.4;
 	if (gamemode === Mode.Dots) {
-		for (var x = 0; x < COLS; x++) {
-			for (var y = 0; y < ROWS; y++) {
+		for (x = 0; x < COLS; x++) {
+			for (y = 0; y < ROWS; y++) {
 				context.fillStyle = Colour[circles[x][y].colour];
 				context.strokeStyle = context.fillStyle;
 				context.beginPath();
-				context.arc(30 + (x * 30), 30 + (y * 30), 5, 0, 2 * Math.PI, false);
+				context.arc(30 + (x * 30), 30 + (y * 30), size, 0, 2 * Math.PI, false);
 				context.stroke();
 				context.fill();
 			}
 		}
 	} else if (gamemode === Mode.Jewels) {
 		context.globalAlpha = 1.0;
-		var size = 5;
-		for (var x = 0; x < COLS; x++) {
-			for (var y = 0; y < ROWS; y++) {
+		var _x, _y;
+		for (x = 0; x < COLS; x++) {
+			for (y = 0; y < ROWS; y++) {
+				_x = 30 + (x * 30);
+				_y = 30 + (y * 30);
 				context.fillStyle = Colour[circles[x][y].colour];
 				context.strokeStyle = context.fillStyle;
 				context.beginPath();
-			    context.lineTo((30 + (x * 30)) - size, 30 + (y * 30));
-			    context.lineTo((30 + (x * 30)), 30 + (y * 30) + size);
-			    context.lineTo((30 + (x * 30)) + size, 30 + (y * 30));
-			    context.lineTo((30 + (x * 30)), 30 + (y * 30) - size);
+			    context.lineTo(_x - size, _y);
+			    context.lineTo(_x, _y + size);
+			    context.lineTo(_x + size, _y);
+			    context.lineTo(_x, _y - size);
 				context.stroke();
 				context.fill();
 			}
@@ -691,6 +711,7 @@ function drawDots () {
 }
 
 function drawPoints () {
+	var i, l;
 	context.lineWidth = 3;
 	context.shadowColor = '#aaa';
 	context.shadowBlur = 10;
@@ -698,7 +719,7 @@ function drawPoints () {
 	context.shadowOffsetY = 0;
 	context.lineJoin = 'round';
 	context.beginPath();
-	for (var i = 0, l = points.length; i < l; i++) {
+	for (i = 0, l = points.length; i < l; i++) {
 		if (i === 0) {
 			context.moveTo(points[0].x, points[0].y);
 		} else {
@@ -713,7 +734,7 @@ function drawTracer () {
 	if (points.length > 0) {
 		context.lineWidth = 3;
 		context.beginPath();
-		context.moveTo(points[points.length-1].x, points[points.length-1].y);
+		context.moveTo(points[points.length - 1].x, points[points.length - 1].y);
 		context.lineTo(mouse.x, mouse.y);
 		context.strokeStyle = Colour[Colour.Grey];
 		context.stroke();
@@ -721,6 +742,7 @@ function drawTracer () {
 }
 
 function clearPoints () {
+	var i, l;
 
 	game.achievements.check(MoveStage.AfterTrace);
 	
@@ -729,7 +751,7 @@ function clearPoints () {
 	}
 
 	// Make circles to clear white
-	for (var i = 0, l = hitCircles.length; i < l; i++) {
+	for (i = 0, l = hitCircles.length; i < l; i++) {
 		hitCircles[i].colour = Colour.White;
 	}
 	
@@ -742,13 +764,18 @@ function clearPoints () {
 	
 	game.achievements.check(MoveStage.AfterPoints);
 	
+	if (!game.isStillPlayable()) {
+		console.log('GAME OVER');
+	}
+	
 }
 
 function gravity () {
-	for (var x = 0; x < COLS; x++) {
-		for (var y = 0; y < ROWS; y++) {
+	var x, y, y2;
+	for (x = 0; x < COLS; x++) {
+		for (y = 0; y < ROWS; y++) {
 			if (circles[x][y].colour === Colour.White) {
-				for (var y2 = y; y2 > 0; y2--) {
+				for (y2 = y; y2 > 0; y2--) {
 					circles[x][y2].colour = circles[x][y2 - 1].colour;
 				}
 				circles[x][0].colour = randomCircleColour();
@@ -758,8 +785,9 @@ function gravity () {
 }
 
 function clearAllColour (c) {
-	for (var x = 0; x < COLS; x++) {
-		for (var y = 0; y < ROWS; y++) {
+	var x, y;
+	for (x = 0; x < COLS; x++) {
+		for (y = 0; y < ROWS; y++) {
 			if (circles[x][y].colour === c) {
 				circles[x][y].colour = Colour.White;
 			}
@@ -769,7 +797,30 @@ function clearAllColour (c) {
 }
 
 function givePoints (p) {
-	scoreEl.innerHTML = (score += p);
+	game.stats.score += p;
+}
+
+game.isStillPlayable = function () {
+	var x, y;
+	for (x = 0; x < COLS - 1; x++) {
+		for (y = 0; y < ROWS - 1; y++) {
+			if (circles[x][y].colour === circles[x + 1][y].colour) {
+				return true;
+			}
+			if (circles[x][y].colour === circles[x][y + 1].colour) {
+				return true;
+			}
+			if (!XYONLY) {
+				if (x !== 0 && circles[x][y].colour === circles[x + 1][y - 1].colour) {
+					return true;
+				}
+				if (circles[x][y].colour === circles[x + 1][y + 1].colour) {
+					return true;
+				}
+			}
+		}
+	}
+	return false;
 }
 
 function step (timestamp) {

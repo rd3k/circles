@@ -3,6 +3,17 @@ body {
 	font-size: 11px;
 }
 
+.pane {
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	position: absolute;
+	border-radius: 10px;
+	display: none;
+	text-align: center;
+}
+
 #outer {
 	position: absolute;
 	border: 1px #ccc solid;
@@ -15,79 +26,32 @@ body {
 }
 
 #start {
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
 	background: #f4f4f4;
-	position: absolute;
-	border-radius: 10px;
-	display: none;
 }
 
 #start h1 {
 	display: block;
 	font-size: 18px;
 	text-align: center;
-	padding-top: 50px;
-}
-
-#start a {
-	background: #444;
-	border-radius: 6px;
-	color: #eee;
-	cursor: default;
-	display: block;
-	width: 150px;
-	line-height: 30px;
-	margin: 20px auto;
-	text-align: center;
-	-webkit-transition: all .2s ease-in-out;
-}
-
-#start a:hover {
-	background: #666;
-	box-shadow: 0 0 5px #555;
+	padding-top: 25px;
 }
 
 #achievements {
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: #ccc;
-	position: absolute;
-	border-radius: 10px;
-	display: none;
+	background: #eee;
 }
 
-#achievements h2 {
+h2 {
 	display: block;
 	font-size: 12px;
 	text-align: center;
-	padding-top: 60px;
 }
 
 #settings {
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	background: #ccc;
-	position: absolute;
-	border-radius: 10px;
-	display: none;
+	background: #eee;
 }
 
 #play {
-	top: 0;
-	left: 0;
-	right: 0;
-	bottom: 0;
 	background: #eee;
-	position: absolute;
-	display: none;
-	border-radius: 10px;
 }
 
 #score {
@@ -114,9 +78,59 @@ body {
 	border-radius: 10px;
 	top: 58px;
 	left: 58px;
+	display: none;
+}
+
+.button {
+	background: #444 no-repeat;
+	border-radius: 6px;
+	color: #eee;
+	cursor: default;
+	display: block;
+	width: 150px;
+	line-height: 30px;
+	margin: 20px auto;
+	text-align: center;
+	-webkit-transition: all .2s ease-in-out;
+}
+
+.button:not(.disabled):hover {
+	background-color: #666;
+	box-shadow: 0 0 5px #555;
+}
+
+.button.small {
+	line-height: 20px;
+	margin: 10px auto;
+}
+
+.button.disabled {
+	opacity: .3;
+}
+
+.button.icon {
+	background-position: 3px center;
+	text-align: left;
+	text-indent: 40px;
+}
+
+#remove {
+	background-image: url('wipe-24.png');
+}
+
+#random {
+	background-image: url('dice-24.png');
+}
+
+#fill {
+	background-image: url('fill-24.png');
 }
 
 .start #start {
+	display: block;
+}
+
+.about #about {
 	display: block;
 }
 
@@ -130,4 +144,17 @@ body {
 
 .play #play {
 	display: block;
+}
+
+.store #store {
+	display: block;
+}
+
+#notifications {
+	background: #ccc;
+	position: absolute;
+	bottom: 5px;
+	left: 5px;
+	width: 280px;
+	height: 30px;
 }

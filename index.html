@@ -7,37 +7,50 @@
 
   <body>
   	<div id="outer">
-  		<div id="play">
+  		<div id="play" class="pane">
 		    <canvas id="game"></canvas>
 		    <span id="score">0</span>
+		    <div id="notifications">
+		    	...
+		    </div>
 		    <div id="store">
-			    <a>Remove all colour</a><br/>
-			    <a>Randomise</a><br/>
-			    <a>Flood fill</a>
+			    <a id="remove" class="button small icon disabled">Remove colour</a>
+			    <a id="random" class="button small icon">Randomise</a>
+			    <a id="fill" class="button small icon">Flood fill</a>
 		    </div>
   		</div>
-  		<div id="pregame">
-	  		<h2></h2>
+  		<div id="pregame" class="pane">
+  			<a class="button small" id="back">Back</a>
+	  		<h2>Pick mode</h2>
   		</div>
-  		<div id="achievements">
-	  		<h2>Achievements and stats</h2>
+  		<div id="achievements" class="pane">
+  			<a class="button small" id="back">Back</a>
+	  		<h2>Achievements</h2>
 	  		<span id="gotachievements">0</span> / <span id="totalachievements">0</span>
 	  		<br/>Draws: <span id="draws">0</span>
 		    <br/>Swaps: <span id="swaps">0</span>
   		</div>
-  		<div id="settings">
-  			<a>Back</a>
+  		<div id="settings" class="pane">
+  			<a class="button small" id="back">Back</a>
 	  		<h2>Settings</h2>
-	  		<span>Sound</span>
-	  		<span>Animation</span>
+	  		<span>Sound</span><br/>
+	  		<span>Animation</span><br/>
+	  		<span>Dot size</span>
+	  		<input type="range" min="0.0" max="1.0" step="0.1" value="0.5"/>
+	  		<span>Number of colours</span>
+	  		<input type="range" min="3" max="6" value="3"/>
   		</div>
-	    <div id="start">
+	    <div id="start" class="pane">
 	  		<h1>Game title</h1>
-	  		<a id="playButton">Play</a>
-	  		<a id="achieveButton">Achievements and stats</a>
-	  		<a id="settingsButton">Settings</a>
+	  		<a class="button" id="playButton">Play</a>
+	  		<a class="button" id="achieveButton">Achievements</a>
+	  		<a class="button" id="settingsButton">Settings</a>
+	  		<a class="button" id="about">About</a>
 	  	</div>
-	  	<div id="about">
+	  	<div id="about" class="pane">
+  			<a class="button small" id="back">Back</a>
+	  		<h2>About</h2>
+	  		<h3>Icon credit</h3>
 		  	<a href="http://thenounproject.com/noun/dice/#icon-No454" target="_blank">Dice</a>  from The Noun Project<br/>
 		  	<a href="http://thenounproject.com/noun/paint-can/#icon-No6007" target="_blank">Paint Can</a> designed by <a href="http://thenounproject.com/alejovaldivia" target="_blank">Alejandro Valdivia</a> from The Noun Project
 	  	</div>
@@ -50,6 +63,12 @@
 		});
 		watch(game.stats, 'swaps', function (property, method, newVal, oldVal) {
 		    swapEl.innerHTML = newVal;
+		});
+		watch(game.stats, 'score', function (property, method, newVal, oldVal) {
+			scoreEl.innerHTML = newVal;
+		});
+		watch(game.stats, 'draws', function (property, method, newVal, oldVal) {
+			drawEl.innerHTML = newVal;
 		});
     </script>
   </body>
