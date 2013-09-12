@@ -24,9 +24,9 @@ body {
 	position: absolute;
 	border: 1px #ccc solid;
 	width: 290px;
-	height: 290px;
+	height: 340px;
 	border-radius: 10px;
-	margin: -145px;
+	margin: -170px -145px;
 	top: 50%;
 	left: 50%;
 }
@@ -62,7 +62,7 @@ h2 {
 	margin: 20px;
 	background: #f4f4f4;
 	border-radius: 10px;
-	line-height: 30px;
+	line-height: 40px;
 }
 
 .setting label.set {
@@ -76,7 +76,7 @@ h2 {
 .setting input[type=range] {
 	width: 50px;
 	float: left;
-	margin: 6px 10px 0 0;
+	margin: 12px 10px 0 0;
 }
 
 #dotsizedot {
@@ -193,6 +193,13 @@ h2 {
 	position: absolute;
 	bottom: 5px;
 	left: 5px;
-	width: 280px;
-	height: 30px;
+	right: 5px;
+	padding: 3px;
+	margin: 0;
+	list-style: none;
+	text-align: left;
+}
+
+#notifications .notification {
+	background: #ddd;
 }

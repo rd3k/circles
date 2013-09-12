@@ -5,7 +5,7 @@
     -moz-user-select: none;
     -ms-user-select: none;
     float: left;
-    margin: 3px;
+    margin: 8px 3px;
 }
 
 .onoffswitch-checkbox {

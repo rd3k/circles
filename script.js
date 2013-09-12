@@ -3,12 +3,6 @@ window.requestAnimationFrame = window.requestAnimationFrame || window.mozRequest
 
 var game = {};
 
-var stage;
-var context;
-var drawEl = document.querySelector('#draws');
-var swapEl = document.querySelector('#swaps');
-var totalAchEl = document.querySelector('#totalachievements');
-
 var Colour = {};
 Colour[Colour['0'] = 'White']   = 0;
 Colour[Colour['1'] = 'Black']   = 1;
@@ -40,7 +34,17 @@ game.trackingShape = false;
 
 game.dom = {
 	score: document.querySelector('#score'),
-	
+	draws: document.querySelector('#draws'),
+	swaps: document.querySelector('#swaps'),
+	totalAch: document.querySelector('#totalachievements'),
+	gotAch: document.querySelector('#gotachievements'),
+	playCanvas: document.querySelector('#game'),
+	playContext: null,
+	updateDotSizer: function () {
+		dsd.style.width = (game.config.DOTSIZE * 2) + 'px';
+		dsd.style.height = (game.config.DOTSIZE * 2) + 'px';
+		dsd.style.marginTop = (14 - (game.config.DOTSIZE)) + (game.config.DOTSIZE / 2) + 'px';
+	}
 }
 
 mouse = {
@@ -94,6 +98,7 @@ function showAchievements () {
 
 function showSettings () {
 	document.body.className = 'settings';
+	updateSettingsUi();
 }
 
 function showPlay () {
@@ -101,7 +106,7 @@ function showPlay () {
 	game.running = true;
 	initStage();
 	initCircles();
-	requestAnimationFrame(step);
+	requestAnimationFrame(game.step);
 }
 
 function showStore () {
@@ -143,7 +148,8 @@ game.config = {
 	POINTSFORSWAP: 20,
 	LOOPPOINTS: 5,
 	XYONLY: true,
-	DOTSIZE: 2,
+	DOTSIZE: 8,
+	ANIMATE: false
 };
 
 game.stats = {
@@ -211,15 +217,15 @@ game.buyables = {
 	getHtml: function () {
 		return '';
 	},
-	Buyable: function () {
-		
+	Buyable: function (name, cost) {
+		this.name = name;
+		this.cost = cost;
 	}	
 };
 
 game.achievements = {
 	gotCount: 0,
 	count: 0,
-	gotEl: document.querySelector('#gotachievements'),
 	toCheck: {
 		AfterTrace: [],
 		AfterHitWhite: [],
@@ -241,9 +247,13 @@ game.achievements = {
 					achievement.achieve();
 					achievement.got = true;
 					game.achievements.gotCount++;
+					game.achievements.notify(achievement);
 				}
 			}
 		});
+	},
+	notify: function (achievement) {
+		console.log('"' + achievement.name + '" unlocked!');
 	},
 	Achievement: function (name, description, need, achieve) {
 		this.got = false;
@@ -269,7 +279,7 @@ game.achievements
 		}, function () {
 			console.log('Got a score of 10, yay!');
 		}),
-		game.MoveStage.AfterTrace
+		game.MoveStage.AfterPoints
 	)
 	.register(
 		new game.achievements.Achievement('Remove 4', 'Remove a line of 4', function () {
@@ -419,7 +429,7 @@ game.achievements
 	)
 	.register(
 		new game.achievements.Achievement('Table', 'Draw a red table', function () {
-			if (tracingColour !== Colour.Red) {
+			if (game.tracingColour !== Colour.Red) {
 				return false;
 			}
 			var valid = ['25,21', '-25,21'];
@@ -450,14 +460,10 @@ game.achievements
 		game.MoveStage.AfterSwap
 	);
 
-totalAchEl.innerHTML = game.achievements.count;
+game.dom.totalAch.innerHTML = game.achievements.count;
 
 function deg2rad (deg) {
 	return (deg * Math.PI) / 180;
-}
-
-function clear () {
-	context.clearRect(0, 0, stage.width, stage.height);
 }
 
 /**
@@ -485,10 +491,9 @@ function Circle (colour, location) {
 }
 
 var circles = [];
-var points = [];
+var trace = [];
 var hitCircles = [];
-var tracingColour = null;
-var traceLength = 0;
+game.tracingColour = null;
 
 function snapToGrip(val, gridSize) {
     var snapCandidate = gridSize * Math.round(val / gridSize);
@@ -517,15 +522,19 @@ function initCircles () {
 
 }
 
+function stageKeyUp () {
+	
+}
+
 function initStage () {
-	stage = document.querySelector('#game');
-	stage.setAttribute('width', 210);
-	stage.setAttribute('height', 210);
-	context = stage.getContext('2d');
 	var lastX, lastY, shift = false;
+	game.dom.playContext = game.dom.playCanvas.getContext('2d')
 	document.addEventListener('keydown', function (e) {
 		if (e.keyCode === 83 /*s*/) {
 			game.trackingShape = true;
+		} else {
+			/* 27 = escape */
+			console.log(e.keyCode);
 		}
 		if (mouse.down || game.stats.score < game.config.POINTSFORSWAP) {
 			return;
@@ -544,7 +553,7 @@ function initStage () {
 			game.trackingShape = false;
 		}
 	});
-	stage.addEventListener('mousedown', function (e) {
+	game.dom.playCanvas.addEventListener('mousedown', function (e) {
 		var x = e.offsetX, y = e.offsetY;
 		mouse.x = x;
 		mouse.y = y;
@@ -563,24 +572,23 @@ function initStage () {
 				if (game.mode === game.PlayMode.Jewels) {
 					hitCircles.push(circles[x2][y2]);
 				} else {
-					points.push(new Point(x, y));
+					trace.push(new Point(x, y));
 					hitCircles.push(circles[x2][y2]);
-					tracingColour = circles[x2][y2].colour;
-					traceLength = 0;
+					game.tracingColour = circles[x2][y2].colour;
 				}
 			}
 		}
 	});
-	stage.addEventListener('mouseup', function () {
+	game.dom.playCanvas.addEventListener('mouseup', function () {
 		mouse.down = false;
-		if (points.length > 1) {
+		if (trace.length > 1) {
 			clearPoints();
 			game.stats.draws++;
 		}
-		points = [];
+		trace = [];
 		hitCircles = [];
 	});
-	stage.addEventListener('mousemove', function (e) {
+	game.dom.playCanvas.addEventListener('mousemove', function (e) {
 		if (mouse.down) {
 			var x = e.offsetX,
 				y = e.offsetY,
@@ -642,7 +650,7 @@ function initStage () {
 				} else if (game.mode === game.PlayMode.Dots) {
 				
 					// Has to be between circles of the same colour
-					if (circles[x3][y3].colour !== tracingColour) {
+					if (circles[x3][y3].colour !== game.tracingColour) {
 						return;
 					}
 					
@@ -658,29 +666,33 @@ function initStage () {
 						for (var i = 0, l = hitCircles.length; i < l; i++) {
 							if (hitCircles[i] === circles[x3][y3]) {
 								
-								// Disallow going back on yourself
 								if (i === l - 2) {
+								
+									// Going back on yourself
+									//hitCircles = hitCircles.splice(l, 1);
+									//trace.pop();
 									return;
+
+								} else {
+								
+									game.stats.loops++;
+									game.stats.score += game.config.LOOPPOINTS;
+									
+									// End the trace by forcing a "mouse up"
+									mouse.down = false;
+									break;
+
 								}
-								
-								game.stats.loops++;
-								game.stats.score += game.config.LOOPPOINTS;
-								
-								// End the trace by forcing a "mouse up"
-								mouse.down = false;
-								break;
 							}
 						}
 					
-						points.push(new Point(x2, y2));
+						trace.push(new Point(x2, y2));
 						hitCircles.push(circles[x3][y3]);
 						lastX = x3;
 						lastY = y3;
 						
 						game.audio.play('gotOne');
-						
-						traceLength ++;
-						
+												
 					}
 				}
 					
@@ -689,70 +701,70 @@ function initStage () {
 	});
 }
 
-function drawStage () {
-	context.fillStyle = Colour[game.config.BACKGROUND];
-	context.fillRect(0, 0, stage.width, stage.height);
+function drawStage (c) {
+	c.fillStyle = Colour[game.config.BACKGROUND];
+	c.fillRect(0, 0, game.dom.playCanvas.width, game.dom.playCanvas.height);
 }
 
-function drawDots () {
+function drawDots (c) {
 	var x, y, size = game.config.DOTSIZE;
-	context.lineWidth = 1;
-	context.globalAlpha = 0.4;
+	c.lineWidth = 1;
+	c.globalAlpha = 0.4;
 	if (game.mode === game.PlayMode.Dots) {
 		for (x = 0; x < game.config.COLS; x++) {
 			for (y = 0; y < game.config.ROWS; y++) {
-				context.fillStyle = Colour[circles[x][y].colour];
-				context.strokeStyle = context.fillStyle;
-				context.beginPath();
-				context.arc(30 + (x * 30), 30 + (y * 30), size, 0, 2 * Math.PI, false);
-				context.stroke();
-				context.fill();
+				c.fillStyle = Colour[circles[x][y].colour];
+				c.strokeStyle = c.fillStyle;
+				c.beginPath();
+				c.arc(30 + (x * 30), 30 + (y * 30), size, 0, 2 * Math.PI, false);
+				c.stroke();
+				c.fill();
 			}
 		}
 	} else if (game.mode === game.PlayMode.Jewels) {
-		context.globalAlpha = 1.0;
+		c.globalAlpha = 1.0;
 		var _x, _y;
 		for (x = 0; x < game.config.COLS; x++) {
 			for (y = 0; y < game.config.ROWS; y++) {
 				_x = 30 + (x * 30);
 				_y = 30 + (y * 30);
-				context.fillStyle = Colour[circles[x][y].colour];
-				context.strokeStyle = context.fillStyle;
-				context.beginPath();
-			    context.lineTo(_x - size, _y);
-			    context.lineTo(_x, _y + size);
-			    context.lineTo(_x + size, _y);
-			    context.lineTo(_x, _y - size);
-				context.stroke();
-				context.fill();
+				c.fillStyle = Colour[circles[x][y].colour];
+				c.strokeStyle = c.fillStyle;
+				c.beginPath();
+			    c.lineTo(_x - size, _y);
+			    c.lineTo(_x, _y + size);
+			    c.lineTo(_x + size, _y);
+			    c.lineTo(_x, _y - size);
+				c.stroke();
+				c.fill();
 			}
 		}
 	}
-	context.globalAlpha = 1.0;
+	c.globalAlpha = 1.0;
 }
 
-function drawTracer () {
+function drawTracer (c) {
 	var i, l;
-	context.lineWidth = game.config.DOTSIZE / 2;
-	context.shadowColor = '#aaa';
-	context.shadowBlur = 10;
-	context.shadowOffsetX = 0;
-	context.shadowOffsetY = 0;
-	context.lineJoin = 'round';
-	context.beginPath();
-	for (i = 0, l = points.length; i < l; i++) {
+	c.lineWidth = game.config.DOTSIZE / 2;
+	c.shadowColor = '#aaa';
+	c.shadowBlur = 10;
+	c.shadowOffsetX = 0;
+	c.shadowOffsetY = 0;
+	c.lineJoin = 'round';
+	c.beginPath();
+	for (i = 0, l = trace.length; i < l; i++) {
 		if (i === 0) {
-			context.moveTo(points[0].x, points[0].y);
+			c.moveTo(trace[0].x, trace[0].y);
 		} else {
-			context.lineTo(points[i].x, points[i].y);
+			c.lineTo(trace[i].x, trace[i].y);
 		}
 	}
-	context.strokeStyle = Colour[tracingColour];
-    context.stroke();
+	c.strokeStyle = Colour[game.tracingColour];
+    c.stroke();
 	if (l > 0) {
-		context.lineTo(mouse.x, mouse.y);
-		context.strokeStyle = Colour[Colour.Grey];
-		context.stroke();
+		c.lineTo(mouse.x, mouse.y);
+		c.strokeStyle = Colour[Colour.Grey];
+		c.stroke();
 	}
 }
 
@@ -833,33 +845,44 @@ game.isStillPlayable = function () {
 	return false;
 }
 
-function step (timestamp) {
-	clear();
-	drawStage();
-	drawTracer();
-	drawDots();
+game.step = function (timestamp) {
+	var playContext = game.dom.playContext;
+	playContext.clearRect(0, 0, game.dom.playCanvas.width, game.dom.playCanvas.height);
+	drawStage(playContext);
+	drawTracer(playContext);
+	drawDots(playContext);
 	if (game.running) {
-		requestAnimationFrame(step);
+		requestAnimationFrame(game.step);
 	}
 }
 
 watch(game.achievements, 'gotCount', function (property, method, newVal, oldVal) {
-    game.achievements.gotEl.innerHTML = newVal;
+    game.dom.gotAch.innerHTML = newVal;
 });
 watch(game.stats, 'swaps', function (property, method, newVal, oldVal) {
-    swapEl.innerHTML = newVal;
+    game.dom.swaps.innerHTML = newVal;
 });
 watch(game.stats, 'score', function (property, method, newVal, oldVal) {
 	game.dom.score.innerHTML = newVal;
 });
 watch(game.stats, 'draws', function (property, method, newVal, oldVal) {
-	drawEl.innerHTML = newVal;
+	game.dom.draws.innerHTML = newVal;
 });
 
+var an = document.getElementById('animation');
+var dsd = document.getElementById('dotsizedot');
 var ds = document.getElementById('dotsizer');
+
+function updateSettingsUi () {
+	an.checked = game.config.ANIMATE;
+	game.dom.updateDotSizer();
+}
+
 ds.addEventListener('change', function (e) {
-	var dsd = document.getElementById('dotsizedot');
-	dsd.style.width = e.target.value + 'px';
-	dsd.style.height = e.target.value + 'px';
-	dsd.style.marginTop = (e.target.max - e.target.value) + (e.target.value / 2) + 'px';
-})
+	game.config.DOTSIZE = parseInt(e.target.value);
+	game.dom.updateDotSizer();
+});
+
+an.addEventListener('change', function (e) {
+	game.config.ANIMATE = e.target.checked;
+});

@@ -9,11 +9,11 @@
   <body>
   	<div id="outer">
   		<div id="play" class="pane">
-		    <canvas id="game"></canvas>
+		    <canvas id="game" width="210" height="210"></canvas>
 		    <span id="score">0</span>
-		    <div id="notifications">
-		    	...
-		    </div>
+		    <ul id="notifications">
+		    	<li class="notification"><span>Name</span></li>
+		    </ul>
 		    <div id="store">
 			    <a id="remove" class="button small icon disabled">Remove colour</a>
 			    <a id="random" class="button small icon">Randomise</a>
@@ -57,10 +57,6 @@
 	  		<div class="setting">
 		  		<label class="set" for="dotsizer">Dot size</label>
 		  		<input id="dotsizer" type="range" min="3" max="14" value="5"/><div id="dotsizedot"></div>
-	  		</div>
-	  		<div class="setting">
-		  		<label class="set">Colours</label>
-		  		<input type="range" min="3" max="6" value="3"/>
 	  		</div>
   		</div>
 	    <div id="start" class="pane">
