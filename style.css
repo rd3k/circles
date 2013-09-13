@@ -188,6 +188,15 @@ h2 {
 	display: block;
 }
 
+#pausemenu {
+	position: absolute;
+	top: 86px;
+	left: 50px;
+	right: 50px;
+	background: rgba(235,235,235,0.9);
+	display: none;
+}
+
 #notifications {
 	background: #ccc;
 	position: absolute;
