@@ -1,87 +1,98 @@
 <!DOCTYPE html>
 <html>
-
-  <head>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="onoff.css">
-  </head>
-
-  <body>
-  	<div id="outer">
-  		<div id="play" class="pane">
-		    <canvas id="game" width="210" height="210"></canvas>
-		    <span id="score">0</span>
-		    <ul id="notifications">
-		    	<li class="notification"><span>Name</span></li>
-		    </ul>
-		    <div id="pausemenu">
-	  			<a class="button" id="resumeButton">Resume</a>
-	  			<a class="button" id="exitButton">Exit to menu</a>
-		    </div>
-		    <div id="store">
-			    <a id="remove" class="button small icon disabled">Remove colour</a>
-			    <a id="random" class="button small icon">Randomise</a>
-			    <a id="fill" class="button small icon">Flood fill</a>
-			    <br/>
-	  			<a class="button" id="closeStoreButton">Close</a>
-		    </div>
-  		</div>
-  		<div id="pregame" class="pane">
-  			<a class="button small" id="back">Back</a>
-	  		<h2>Pick mode</h2>
-  		</div>
-  		<div id="achievements" class="pane">
-  			<a class="button small" id="back">Back</a>
-	  		<h2>Achievements</h2>
-	  		<span id="gotachievements">0</span> / <span id="totalachievements">0</span>
-	  		<br/>Draws: <span id="draws">0</span>
-		    <br/>Swaps: <span id="swaps">0</span>
-  		</div>
-  		<div id="settings" class="pane">
-  			<a class="button small" id="back">Back</a>
-	  		<h2>Settings</h2>
-	  		<div class="setting">
-	  			<label class="set" for="sound">Sound</label>
-	  			<div class="onoffswitch">
-				    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="sound">
-				    <label class="onoffswitch-label" for="sound">
-				        <div class="onoffswitch-inner"></div>
-				        <div class="onoffswitch-switch"></div>
-				    </label>
+	<head>
+		<link rel="stylesheet" href="style.css">
+		<link rel="stylesheet" href="onoff.css">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	</head>
+	<body>
+		<div id="outer">
+			<div id="playPane" class="pane">
+				<span id="score">0</span>
+				<canvas id="game" width="210" height="210"></canvas>
+				<ul id="notifications">
+					<li class="notification"><span>Name</span></li>
+				</ul>
+				<div id="pausemenu">
+					<a class="button" id="resumeButton">Resume</a>
+					<a class="button" id="exitButton">Exit to menu</a>
 				</div>
-	  		</div>
-	  		<div class="setting">
-	  			<label class="set" for="animation">Animation</label>
-	  			<div class="onoffswitch">
-				    <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="animation">
-				    <label class="onoffswitch-label" for="animation">
-				        <div class="onoffswitch-inner"></div>
-				        <div class="onoffswitch-switch"></div>
-				    </label>
+				<div id="store">
+					<a id="remove" class="button small icon disabled">Remove colour</a>
+					<a id="random" class="button small icon">Randomise</a>
+					<a id="fill" class="button small icon">Flood fill</a>
+					<br/>
+					<a class="button" id="closeStoreButton">Close</a>
 				</div>
-	  		</div>
-	  		<div class="setting">
-		  		<label class="set" for="dotsizer">Dot size</label>
-		  		<input id="dotsizer" type="range" min="3" max="14" value="5"/><div id="dotsizedot"></div>
-	  		</div>
-  		</div>
-	    <div id="start" class="pane">
-	  		<h1>Game title</h1>
-	  		<a class="button" id="playButton">Play</a>
-	  		<a class="button" id="achieveButton">Achievements</a>
-	  		<a class="button" id="settingsButton">Settings</a>
-	  		<a class="button" id="about">About</a>
-	  	</div>
-	  	<div id="about" class="pane">
-  			<a class="button small" id="back">Back</a>
-	  		<h2>About</h2>
-	  		<h3>Icon credit</h3>
-		  	<a href="http://thenounproject.com/noun/dice/#icon-No454" target="_blank">Dice</a>  from The Noun Project<br/>
-		  	<a href="http://thenounproject.com/noun/paint-can/#icon-No6007" target="_blank">Paint Can</a> designed by <a href="http://thenounproject.com/alejovaldivia" target="_blank">Alejandro Valdivia</a> from The Noun Project
-	  	</div>
-  	</div>
-    <script src="watch.js"></script>
-    <script src="script.js"></script>
-  </body>
-
+			</div>
+			<div id="preGamePane" class="pane">
+				<a class="button small" id="back">Back</a>
+				<h2>Pick mode</h2>
+				<a id="play60secs" class="playButton">60 seconds</a><br/>
+				<a id="play30moves" class="playButton">30 moves</a><br/>
+				<a id="playForever" class="playButton">Forever</a>
+			</div>
+			<div id="howToPane" class="pane">
+				<a class="button small" id="back">Back</a>
+				<h2>How to play</h2>
+				<p>...</p>
+			</div>
+			<div id="achievementsPane" class="pane">
+				<a class="button small" id="back">Back</a>
+				<h2>Achievements</h2>
+				<span id="gotachievements">0</span> / <span id="totalachievements">0</span>
+				<br/>Draws: <span id="draws">0</span>
+				<br/>Swaps: <span id="swaps">0</span>
+			</div>
+			<div id="settingsPane" class="pane">
+				<a class="button small" id="back">Back</a>
+				<h2>Settings</h2>
+				<div class="setting">
+					<label class="set" for="sound">Sound</label>
+					<div class="onoffswitch">
+						<input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="sound">
+						<label class="onoffswitch-label" for="sound">
+							<div class="onoffswitch-inner"></div>
+							<div class="onoffswitch-switch"></div>
+						</label>
+					</div>
+				</div>
+				<div class="setting">
+					<label class="set" for="animation">Animation</label>
+					<div class="onoffswitch">
+						<input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="animation">
+						<label class="onoffswitch-label" for="animation">
+							<div class="onoffswitch-inner"></div>
+							<div class="onoffswitch-switch"></div>
+						</label>
+					</div>
+				</div>
+				<div class="setting">
+					<label class="set" for="dotsizer">Dot size</label>
+					<input id="dotsizer" type="range" min="3" max="14" value="5"/>
+					<div id="dotsizedot"></div>
+				</div>
+			</div>
+			<div id="startPane" class="pane">
+				<h1>Game title</h1>
+				<a class="button" id="playButton">Play</a>
+				<a class="button" id="howToButton">How to play</a>
+				<a class="button" id="achieveButton">Achievements</a>
+				<a class="button" id="settingsButton">Settings</a>
+				<a class="button" id="about">About</a>
+			</div>
+			<div id="aboutPane" class="pane">
+				<a class="button small" id="back">Back</a>
+				<h2>About</h2>
+				<h3>Icon credit</h3>
+				<p><a href="http://thenounproject.com/noun/dice/#icon-No454" target="_blank">Dice</a> from The Noun Project</p>
+				<p><a href="http://thenounproject.com/noun/paint-can/#icon-No6007" target="_blank">Paint Can</a> designed by <a href="http://thenounproject.com/alejovaldivia" target="_blank">Alejandro Valdivia</a> from The Noun Project</p>
+				<p><a href="http://thenounproject.com/noun/timer/#icon-No18387" target="_blank">Timer</a> designed by <a href="http://thenounproject.com/caseyochinang" target="_blank">Casey Ochinang</a> from The Noun Project</p>
+				<p><a href="http://thenounproject.com/noun/network/#icon-No3683" target="_blank">Network</a> designed by <a href="http://thenounproject.com/benfurneaux" target="_blank">Ben Rex Furneaux</a> from The Noun Project</p>
+				<p><a href="http://thenounproject.com/noun/infinity/#icon-No9992" target="_blank">Infinity</a> designed by <a href="http://thenounproject.com/cengizsari" target="_blank">Cengiz SARI</a> from The Noun Project</p>
+			</div>
+		</div>
+		<script src="watch.js"></script>
+		<script src="script.js"></script>
+	</body>
 </html>

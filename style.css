@@ -7,6 +7,12 @@ body {
 	-moz-user-select: none;
 	-ms-user-select: none;
 	user-select: none;
+	margin: 0;
+	padding: 0;
+}
+
+a {
+	color: #333;
 }
 
 .pane {
@@ -31,11 +37,11 @@ body {
 	left: 50%;
 }
 
-#start {
+#startPane {
 	background: #f4f4f4;
 }
 
-#start h1 {
+#startPane h1 {
 	display: block;
 	font-size: 18px;
 	text-align: center;
@@ -52,7 +58,12 @@ h2 {
 	text-align: center;
 }
 
-#settings {
+#aboutPane {
+	background: #eee;
+	padding: 20px;
+}
+
+#settingsPane {
 	background: #eee;
 	text-align: left;
 }
@@ -92,6 +103,10 @@ h2 {
 	background: #eee;
 }
 
+#preGamePane {
+	background: #eee;
+}
+
 #score {
 	font-size: 16px;
 	font-weight: bold;
@@ -102,8 +117,7 @@ h2 {
 
 #game {
 	cursor: default;
-	position: absolute;
-	margin: 40px;
+	margin: 0 40px;
 	border-radius: 10px;
 	overflow: hidden;
 }
@@ -164,28 +178,63 @@ h2 {
 	background-image: url('fill-24.png');
 }
 
-.start #start {
+.start #startPane {
 	display: block;
 }
 
-.about #about {
+.about #aboutPane {
 	display: block;
 }
 
-.achievements #achievements {
+.achievements #achievementsPane {
 	display: block;
 }
 
-.settings #settings {
+.settings #settingsPane {
 	display: block;
 }
 
-.play #play {
+.pregame #preGamePane {
+	display: block;
+}
+
+.play #playPane {
 	display: block;
 }
 
 .store #store {
 	display: block;
+}
+
+.playButton {
+	display: inline-block;
+	width: 75px;
+	line-height: 35px;
+	background: #fff;
+	border: 1px #777 solid;
+	border-radius: 8px;
+	color: #333;
+	background: #fff no-repeat center 15px;
+	padding-top: 40px;
+	margin: 5px;
+	cursor: default;
+}
+
+.playButton:hover {
+	-webkit-transition: all .2s ease-in-out;
+	box-shadow: 0 0 5px #555;
+}
+
+#play60secs {
+	background-image: url('time-24.png');
+}
+
+#play30moves {
+	background-image: url('connected-24.png');
+}
+
+#playForever {
+	background-image: url('infinity-24.png');
 }
 
 #pausemenu {
