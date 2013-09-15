@@ -99,11 +99,15 @@ h2 {
 	position: relative;
 }
 
-#play {
+#playPane {
 	background: #eee;
 }
 
 #preGamePane {
+	background: #eee;
+}
+
+#howToPane {
 	background: #eee;
 }
 
@@ -186,6 +190,10 @@ h2 {
 	display: block;
 }
 
+.howTo #howToPane {
+	display: block;
+}
+
 .achievements #achievementsPane {
 	display: block;
 }
@@ -259,5 +267,5 @@ h2 {
 }
 
 #notifications .notification {
-	background: #ddd;
+	background: #ddd url('badge-24.png') no-repeat;
 }

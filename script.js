@@ -123,6 +123,9 @@ game.dom = {
 	showStart: function () {
 		document.body.className = 'start';
 	},
+	showHowTo: function () {
+		document.body.className = 'howTo';
+	},
 	showAbout: function () {
 		document.body.className = 'about';
 	},
@@ -149,6 +152,7 @@ game.dom = {
 	showPlay: function () {
 		document.body.className = 'play';
 		game.running = true;
+		game.storage.save();
 		initStage();
 		initCircles();
 		requestAnimationFrame(game.step);
@@ -229,6 +233,29 @@ game.audio = {
 		setTimeout(function () {
 			game.audio.osc.frequency.value = 0;
 		}, 100);
+	}
+};
+
+game.storage = {
+	init: function () {
+		if (localStorage.getItem('circlesData') === null) {
+			localStorage.setItem('circlesData', JSON.stringify({}));
+		} else {
+			game.storage.load();
+		}
+	},
+	save: function () {
+		localStorage.setItem('circlesData', JSON.stringify({
+			dotSize: game.config.DOTSIZE,
+			animate: game.config.ANIMATE,
+			muted: game.audio.muted
+		}));
+	},
+	load: function () {
+		var loaded = JSON.parse(localStorage.getItem('circlesData'));
+		game.config.DOTSIZE = loaded.dotSize;
+		game.config.ANIMATE = loaded.animate;
+		game.audio.muted = loaded.muted;
 	}
 };
 
@@ -318,8 +345,10 @@ game.controls = {
 			game.dom.showAchievements();
 		} else if (target === 'settingsButton') {
 			game.dom.showSettings();
-		} else if (target === 'about') {
+		} else if (target === 'aboutButton') {
 			game.dom.showAbout();
+		} else if (target === 'howToButton') {
+			game.dom.showHowTo();
 		} else if (target === 'score') {
 			game.dom.showStore();
 		} else if (target === 'back') {
@@ -342,6 +371,8 @@ game.controls = {
 		} else if (e.keyCode === 27 && game.running) {
 			// esc
 			console.log('pause game');
+			game.running = false;
+			game.dom.showStart();
 		} else {
 			console.log(e.keyCode);
 		}
@@ -920,6 +951,32 @@ function clearAllColour (c) {
 	gravity();
 }
 
+function floodFill (x, y) {
+	var floodColour = game.circles[x][y].colour;
+	game.circles[x][y].colour = game.Colour.White;
+	if (x !== 0 && game.circles[x - 1][y].colour === floodColour) {
+		floodFill(x - 1, y);
+	}
+	if (y !== 0 && game.circles[x][y - 1].colour === floodColour) {
+		floodFill(x, y - 1);
+	}
+	if (x !== game.config.COLS - 1 && game.circles[x + 1][y].colour === floodColour) {
+		floodFill(x + 1, y);
+	}
+	if (y !== game.config.ROWS - 1 && game.circles[x][y + 1].colour === floodColour) {
+		floodFill(x, y + 1);
+	}
+}
+
+function randomise () {
+	var x, y;
+	for (x = 0; x < game.config.COLS; x++) {
+		for (y = 0; y < game.config.ROWS; y++) {
+			game.circles[x][y].colour = randomCircleColour();
+		}
+	}
+}
+
 game.isStillPlayable = function () {
 	var x, y;
 	for (x = 0; x < game.config.COLS - 1; x++) {
@@ -986,4 +1043,5 @@ watch(game.stats, 'draws', function (property, method, newVal, oldVal) {
 
 game.dom.addEvents();
 game.audio.init();
+game.storage.init();
 game.dom.showStart();
